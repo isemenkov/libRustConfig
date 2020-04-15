@@ -3,6 +3,7 @@ name = "libRustConfig"
 version = "0.1.0"
 authors = ["iXakeR <ivan@semenkov.pro>"]
 edition = "2018"
+link = "config"
 
 [dependencies]
 libc = "*"
