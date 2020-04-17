@@ -32,7 +32,7 @@ mod libconfig-sys;
 
 extern crate libc;
 
-use libc::{c_int};
+use libc::{c_short, c_int, c_uint, c_longlong, c_double, c_char, c_void};
 use std::{ptr, mem};
 
 pub const CONFIG_TYPE_NONE                                              = 0;
@@ -56,4 +56,26 @@ pub const CONFIG_OPTION_OPEN_BRACE_ON_SEPARATE_LINE                     = 0x10;
 
 pub const CONFIG_TRUE                                                   = 1;
 pub const CONFIG_FALSE                                                  = 0;
+
+#[repr(C)]
+pub union config_value_t {
+    ival :      c_int;
+    llval :     c_longlong;
+    fval :      c_double;
+    sval :      * const c_char;
+    list :      * mut config_list_t;
+}
+
+#[repr(C)]
+pub struct config_setting_t {
+    name :      * const c_char;
+    type :      c_short;
+    format :    c_short;
+    value :     & mut config_value_t;
+    parent :    * mut config_setting_t;
+    config :    * mut config_t;
+    hook :      * mut c_void;
+    line :      c_uint;
+    file :      * const c_char;
+}
 
