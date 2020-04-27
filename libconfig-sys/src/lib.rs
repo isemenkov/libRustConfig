@@ -36,27 +36,27 @@ use libc::{c_schar, c_short, c_ushort, c_int, c_uint, c_longlong, c_double};
 use libc::FILE;
 use std::os::raw::c_void;
 
-pub const CONFIG_TYPE_NONE : usize                                      = 0;
-pub const CONFIG_TYPE_GROUP : usize                                     = 1;
-pub const CONFIG_TYPE_INT : usize                                       = 2;
-pub const CONFIG_TYPE_INT64 : usize                                     = 3;
-pub const CONFIG_TYPE_FLOAT : usize                                     = 4;
-pub const CONFIG_TYPE_STRING : usize                                    = 5;
-pub const CONFIG_TYPE_BOOL : usize                                      = 6;
-pub const CONFIG_TYPE_ARRAY : usize                                     = 7;
-pub const CONFIG_TYPE_LIST : usize                                      = 8;
+pub const CONFIG_TYPE_NONE : c_int                                      = 0;
+pub const CONFIG_TYPE_GROUP : c_int                                     = 1;
+pub const CONFIG_TYPE_INT : c_int                                       = 2;
+pub const CONFIG_TYPE_INT64 : c_int                                     = 3;
+pub const CONFIG_TYPE_FLOAT : c_int                                     = 4;
+pub const CONFIG_TYPE_STRING : c_int                                    = 5;
+pub const CONFIG_TYPE_BOOL : c_int                                      = 6;
+pub const CONFIG_TYPE_ARRAY : c_int                                     = 7;
+pub const CONFIG_TYPE_LIST : c_int                                      = 8;
 
-pub const CONFIG_FORMAT_DEFAULT : usize                                 = 1;
-pub const CONFIG_FORMAT_HEX : usize                                     = 2;
+pub const CONFIG_FORMAT_DEFAULT : c_int                                 = 1;
+pub const CONFIG_FORMAT_HEX : c_int                                     = 2;
 
-pub const CONFIG_OPTION_AUTOCONVERT : usize                             = 0x01;
-pub const CONFIG_OPTION_SEMICOLON_SEPARATORS : usize                    = 0x02;
-pub const CONFIG_OPTION_COLON_ASSIGNMENT_FOR_GROUPS : usize             = 0x04;
-pub const CONFIG_OPTION_COLON_ASSIGNMENT_FOR_NON_GROUPS : usize         = 0x08;
-pub const CONFIG_OPTION_OPEN_BRACE_ON_SEPARATE_LINE : usize             = 0x10;
+pub const CONFIG_OPTION_AUTOCONVERT : c_int                             = 0x01;
+pub const CONFIG_OPTION_SEMICOLON_SEPARATORS : c_int                    = 0x02;
+pub const CONFIG_OPTION_COLON_ASSIGNMENT_FOR_GROUPS : c_int             = 0x04;
+pub const CONFIG_OPTION_COLON_ASSIGNMENT_FOR_NON_GROUPS : c_int         = 0x08;
+pub const CONFIG_OPTION_OPEN_BRACE_ON_SEPARATE_LINE : c_int             = 0x10;
 
-pub const CONFIG_TRUE : usize                                           = 1;
-pub const CONFIG_FALSE : usize                                          = 0;
+pub const CONFIG_TRUE : c_int                                           = 1;
+pub const CONFIG_FALSE : c_int                                          = 0;
 
 #[derive(Copy, Clone)]
 pub enum config_error_t {
