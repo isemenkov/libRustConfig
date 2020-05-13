@@ -34,8 +34,8 @@ use std::ffi::{CStr, CString};
 use std::{fmt, str};
 
 pub struct Config {
-    config : raw::config_t;
-    rootElement : Box<raw::config_setting_t>;
+    config : raw::config_t,
+    root_element : Box<raw::config_setting_t>
 }
 
 impl Config {

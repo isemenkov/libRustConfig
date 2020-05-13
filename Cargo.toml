@@ -10,4 +10,4 @@ readme = "README.md"
 categories = []
 
 [dependencies]
-libconfig-sys = { path = "libconfig-sys", version = "0.1" }
+libconfig-sys = { path = "./libconfig-sys", version = "0.1" }
