@@ -324,9 +324,9 @@ pub fn config_setting_parent (setting : *const config_setting_t)
 pub fn config_setting_is_root (setting : *const config_setting_t) -> c_int {
     unsafe {
         if (*setting).parent.is_null() {
-            CONFIG_TRUE as c_int
+            CONFIG_TRUE
         } else {
-            CONFIG_FALSE as c_int
+            CONFIG_FALSE
         }
     }
 }
