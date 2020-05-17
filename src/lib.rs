@@ -34,26 +34,27 @@ use std::mem::MaybeUninit;
 use std::path;
 
 pub struct Config {
-    config : raw::config_t,
-    root_element : Option<raw::config_setting_t>
+    config : Box<raw::config_t>,
+    root_element : Option<Box<raw::config_setting_t>>
 }
 
 impl Config {
-
+    
     pub fn new() -> Config {
+        
         let mut cfg = MaybeUninit::<raw::config_t>::uninit();
-        unsafe { raw::config_init(cfg.as_mut_ptr() as *mut raw::config_t); }
-        let cfg = unsafe { cfg.assume_init() };
+        unsafe { raw::config_init(cfg.as_mut_ptr()); }
+        let cfg = unsafe { cfg.assume_init(); };
         
         Config {
-            config : cfg,
+            config : unsafe { Box::from_raw(cfg) },
             root_element : None
         }
     }
     
     pub fn load_from_file(&mut self, file_name : &path::Path) -> () {
         if file_name.exists() {
-            unsafe { raw::config_read_file(&mut self.config, 
+            unsafe { raw::config_read_file(self.config.as_mut_ptr(), 
                 file_name.as_os_str().to_str().unwrap().as_ptr() as *const i8); 
             }
         }
@@ -61,14 +62,14 @@ impl Config {
     
     pub fn load_from_string(&mut self, config_string : String) -> () {
         unsafe {
-            raw::config_read_string(&mut self.config, config_string.as_ptr()
-                as *const i8);
+            raw::config_read_string(self.config.as_mut_ptr(), 
+                config_string.as_ptr() as *const i8);
         }
     }
 }
 
 impl Drop for Config {
     fn drop (&mut self) {
-        unsafe { raw::config_destroy(&mut self.config); }
+        unsafe { raw::config_destroy(self.config.as_mut_ptr()); }
     }
 }
