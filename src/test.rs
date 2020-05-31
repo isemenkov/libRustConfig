@@ -28,12 +28,18 @@
 /*                                                                            */
 /******************************************************************************/
 
-use crate::config::Config;
+use crate::config::{Config};
 
 #[test]
 fn test_create() {
     let mut cfg = Config::new();
-    cfg.load_from_string("section1 : { integer_value = -12; boolean_value = false; };".to_string());
+    cfg.load_from_string(
+        "section1 : { integer_value = -12; boolean_value = false; };".to_string()
+    );
+    
+    assert!(cfg.value("section1".to_string()).is_root());
     assert!(cfg.value("section1".to_string()).is_section());
-    assert_eq!(cfg.value("section1.integer_value".to_string()).as_integer(), -12);
+    assert_eq!(cfg.value("section1.integer_value".to_string()).as_integer(), 
+        -12);
+    
 }

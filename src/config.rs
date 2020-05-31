@@ -33,13 +33,23 @@ use libconfig_sys as raw;
 use std::mem;
 use std::path;
 
-// Works with configurations 
+// Configuration file
 pub struct Config {
     config : raw::config_t,
     root_element : Option<raw::config_setting_t>
 }
 
-pub struct ConfigOption {
+// Option value type
+pub enum OptionType {
+    UndefinedType,
+    IntegerType,
+    Int64Type,
+    FloatType,
+    StringType,
+    BooleanType
+}
+
+pub struct OptionReader {
     element : Option<raw::config_setting_t>
 }
 
@@ -63,12 +73,16 @@ impl Config {
     pub fn load_from_file(&mut self, file_name : &path::Path) -> () {
         if file_name.exists() {
             unsafe {
-                let result = raw::config_read_file(&mut self.config, 
-                file_name.as_os_str().to_str().unwrap().as_ptr() as *const i8);
+                let result = raw::config_read_file(
+                    &mut self.config, 
+                    file_name.as_os_str().to_str().unwrap().as_ptr() as *const i8
+                );
                 
                 if result == raw::CONFIG_TRUE {
                     self.root_element = 
                         Some(*raw::config_root_setting(&mut self.config));
+                } else {
+                    self.root_element = None
                 }
             }
         }
@@ -77,22 +91,28 @@ impl Config {
     // Parse configuration from string
     pub fn load_from_string(&mut self, config_string : String) -> () {
         unsafe {
-            let result = raw::config_read_string(&mut self.config, 
-                config_string.as_ptr() as *const i8);
+            let result = raw::config_read_string(
+                &mut self.config, 
+                config_string.as_ptr() as *const i8
+            );
             
             if result == raw::CONFIG_TRUE {
                 self.root_element = 
                     Some(*raw::config_root_setting(&mut self.config));
+            } else {
+                self.root_element = None
             }
         }
     }
     
-    pub fn value(&mut self, path : String) -> ConfigOption {
+    pub fn value(&mut self, path : String) -> OptionReader {
         unsafe {
-            let option = raw::config_setting_lookup(&mut self.root_element.unwrap(), 
-                path.as_ptr() as *const i8);
+            let option = raw::config_setting_lookup(
+                &mut self.root_element.unwrap(), 
+                path.as_ptr() as *const i8
+            );
                 
-            ConfigOption {
+            OptionReader {
                 element : Some(*option)
             }
         }
@@ -102,26 +122,94 @@ impl Config {
 // Destructor
 impl Drop for Config {
     fn drop (&mut self) {
-        unsafe { raw::config_destroy(&mut self.config); }
+        unsafe { 
+            raw::config_destroy(&mut self.config); 
+        }
     }
 }
 
-impl ConfigOption {
+impl OptionReader {
     
-    pub fn new() -> ConfigOption {
-        ConfigOption {
+    // Constructor
+    pub fn new() -> OptionReader {
+        OptionReader {
             element : None
         }
     }
     
-    pub fn is_section(&mut self) -> bool {
+    // Return true if element is root
+    pub fn is_root(&self) -> bool {
+        let result =
+            raw::config_setting_is_root(&self.element.unwrap());
+        
+        if result == raw::CONFIG_TRUE {
+            true
+        } else {
+            false
+        }
+    }
+     
+    // Return true if element is section group
+    pub fn is_section(&self) -> bool {
         let result =
             raw::config_setting_is_group(&self.element.unwrap());
+        
         if result == raw::CONFIG_TRUE {
             true
         } else {
             false
         }      
+    }
+    
+    // Return true if element is array
+    pub fn is_array(&self) -> bool {
+        let result =
+            raw::config_setting_is_array(&self.element.unwrap());
+        
+        if result == raw::CONFIG_TRUE {
+            true
+        } else {
+            false
+        }
+    }
+    
+    // Return true if element is list
+    pub fn is_list(&self) -> bool {
+        let result =
+            raw::config_setting_is_list(&self.element.unwrap());
+        
+        if result == raw::CONFIG_TRUE {
+            true
+        } else {
+            false
+        }
+    }
+    
+    // Return option element parent item
+    pub fn parent(&self) -> OptionReader {
+        unsafe {
+            let result =
+                raw::config_setting_parent(&self.element.unwrap());
+            
+            OptionReader {
+                element : Some(*result)
+            }
+        }
+    }
+    
+    // Return option value type
+    pub fn value_type(&self) -> OptionType {
+        let result =
+            raw::config_setting_type(&self.element.unwrap());
+        
+        match result as i16 {
+            raw::CONFIG_TYPE_INT => { OptionType::IntegerType },
+            raw::CONFIG_TYPE_INT64 => { OptionType::Int64Type },
+            raw::CONFIG_TYPE_FLOAT => { OptionType::FloatType },
+            raw::CONFIG_TYPE_STRING => { OptionType::StringType },
+            raw::CONFIG_TYPE_BOOL => { OptionType::BooleanType },
+            _ => { OptionType::UndefinedType }
+        }
     }
     
     pub fn as_integer(&mut self) -> i32 {
