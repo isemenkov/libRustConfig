@@ -67,6 +67,7 @@ pub enum config_error_t {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct config_value_t {
     pub ival : c_int,
     pub llval : c_longlong,
@@ -76,6 +77,7 @@ pub struct config_value_t {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct config_setting_t {
     pub name : *mut c_schar,
     pub setting_type : c_short,

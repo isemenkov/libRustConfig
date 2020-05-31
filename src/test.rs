@@ -28,7 +28,12 @@
 /*                                                                            */
 /******************************************************************************/
 
-pub mod config;
+use crate::config::Config;
 
-#[cfg(test)]
-mod test;
+#[test]
+fn test_create() {
+    let mut cfg = Config::new();
+    cfg.load_from_string("section1 : { integer_value = -12; boolean_value = false; };".to_string());
+    assert!(cfg.value("section1".to_string()).is_section());
+    assert_eq!(cfg.value("section1.integer_value".to_string()).as_integer(), -12);
+}
