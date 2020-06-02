@@ -28,7 +28,7 @@
 /*                                                                            */
 /******************************************************************************/
 
-use crate::config::{Config};
+use crate::config::{Config, OptionType};
 
 #[test]
 fn test_create() {
@@ -41,5 +41,6 @@ fn test_create() {
     assert!(cfg.value("section1".to_string()).is_section());
     assert_eq!(cfg.value("section1.integer_value".to_string()).as_integer(), 
         -12);
-    
+    assert_eq!(cfg.value("section1.integer_value".to_string()).value_type(),
+        OptionType::IntegerType);
 }

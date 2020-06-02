@@ -40,6 +40,7 @@ pub struct Config {
 }
 
 // Option value type
+#[derive(PartialEq, Debug)]
 pub enum OptionType {
     UndefinedType,
     IntegerType,
