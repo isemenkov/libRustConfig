@@ -40,7 +40,7 @@ pub struct Config {
 }
 
 // Option value type
-#[derive(PartialEq, Debug)]
+#[derive(Debug, PartialEq)]
 pub enum OptionType {
     UndefinedType,
     IntegerType,
@@ -143,11 +143,7 @@ impl OptionReader {
         let result =
             raw::config_setting_is_root(&self.element.unwrap());
         
-        if result == raw::CONFIG_TRUE {
-            true
-        } else {
-            false
-        }
+        result == raw::CONFIG_TRUE
     }
      
     // Return true if element is section group
@@ -155,11 +151,7 @@ impl OptionReader {
         let result =
             raw::config_setting_is_group(&self.element.unwrap());
         
-        if result == raw::CONFIG_TRUE {
-            true
-        } else {
-            false
-        }      
+        result == raw::CONFIG_TRUE      
     }
     
     // Return true if element is array
@@ -167,11 +159,7 @@ impl OptionReader {
         let result =
             raw::config_setting_is_array(&self.element.unwrap());
         
-        if result == raw::CONFIG_TRUE {
-            true
-        } else {
-            false
-        }
+        result == raw::CONFIG_TRUE
     }
     
     // Return true if element is list
@@ -179,11 +167,7 @@ impl OptionReader {
         let result =
             raw::config_setting_is_list(&self.element.unwrap());
         
-        if result == raw::CONFIG_TRUE {
-            true
-        } else {
-            false
-        }
+        result == raw::CONFIG_TRUE
     }
     
     // Return option element parent item
