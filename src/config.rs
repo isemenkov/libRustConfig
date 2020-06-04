@@ -32,6 +32,7 @@ use libconfig_sys as raw;
 
 use std::mem;
 use std::path;
+use std::ffi::CStr;
 
 // Configuration file
 pub struct Config {
@@ -197,6 +198,7 @@ impl OptionReader {
         }
     }
     
+    // present option value as i32
     pub fn as_integer(&mut self) -> i32 {
         unsafe {
             let result =
@@ -205,4 +207,41 @@ impl OptionReader {
         }
     }
     
+    
+    // present option value as i64
+    pub fn as_int64(&mut self) -> i64 {
+        unsafe {
+            let result =
+                raw::config_setting_get_int64(&mut self.element.unwrap());
+            result
+        }
+    }
+    
+    // present option value as f64
+    pub fn as_float(&mut self) -> f64 {
+        unsafe {
+            let result =
+                raw::config_setting_get_float(&mut self.element.unwrap());
+            result
+        }
+    }
+    
+    // present option value as bool
+    pub fn as_bool(&mut self) -> bool {
+        unsafe {
+            let result =
+                raw::config_setting_get_bool(&mut self.element.unwrap());
+            result == raw::CONFIG_TRUE
+        }
+    }
+    
+    // present option value as string
+    pub fn as_string(&mut self) -> String {
+        unsafe {
+            let result =
+                CStr::from_ptr(raw::config_setting_get_string(
+                    &mut self.element.unwrap()));
+            result.to_str().unwrap().to_string()
+        }
+    }
 }
