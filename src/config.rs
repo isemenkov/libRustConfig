@@ -140,108 +140,152 @@ impl OptionReader {
     }
     
     // Return true if element is root
-    pub fn is_root(&self) -> bool {
+    pub fn is_root(&self) -> Option<bool> {
+        if self.element.is_none() {
+            return None;
+        }
+        
         let result =
             raw::config_setting_is_root(&self.element.unwrap());
         
-        result == raw::CONFIG_TRUE
+        Some(result == raw::CONFIG_TRUE)
     }
      
     // Return true if element is section group
-    pub fn is_section(&self) -> bool {
+    pub fn is_section(&self) -> Option<bool> {
+        if self.element.is_none() {
+            return None;
+        }
+        
         let result =
             raw::config_setting_is_group(&self.element.unwrap());
         
-        result == raw::CONFIG_TRUE      
+        Some(result == raw::CONFIG_TRUE)      
     }
     
     // Return true if element is array
-    pub fn is_array(&self) -> bool {
+    pub fn is_array(&self) -> Option<bool> {
+        if self.element.is_none() {
+            return None
+        }
+        
         let result =
             raw::config_setting_is_array(&self.element.unwrap());
         
-        result == raw::CONFIG_TRUE
+        Some(result == raw::CONFIG_TRUE)
     }
     
     // Return true if element is list
-    pub fn is_list(&self) -> bool {
+    pub fn is_list(&self) -> Option<bool> {
+        if self.element.is_none() {
+            return None
+        }
+        
         let result =
             raw::config_setting_is_list(&self.element.unwrap());
         
-        result == raw::CONFIG_TRUE
+        Some(result == raw::CONFIG_TRUE)
     }
     
     // Return option element parent item
-    pub fn parent(&self) -> OptionReader {
+    pub fn parent(&self) -> Option<OptionReader> {
+        if self.element.is_none() {
+            return None
+        }
+        
         unsafe {
             let result =
                 raw::config_setting_parent(&self.element.unwrap());
             
-            OptionReader {
+            Some(OptionReader {
                 element : Some(*result)
-            }
+            })
         }
     }
     
     // Return option value type
-    pub fn value_type(&self) -> OptionType {
+    pub fn value_type(&self) -> Option<OptionType> {
+        if self.element.is_none() {
+            return None
+        }
+        
         let result =
             raw::config_setting_type(&self.element.unwrap());
         
         match result as i16 {
-            raw::CONFIG_TYPE_INT => { OptionType::IntegerType },
-            raw::CONFIG_TYPE_INT64 => { OptionType::Int64Type },
-            raw::CONFIG_TYPE_FLOAT => { OptionType::FloatType },
-            raw::CONFIG_TYPE_STRING => { OptionType::StringType },
-            raw::CONFIG_TYPE_BOOL => { OptionType::BooleanType },
-            _ => { OptionType::UndefinedType }
+            raw::CONFIG_TYPE_INT => { Some(OptionType::IntegerType) },
+            raw::CONFIG_TYPE_INT64 => { Some(OptionType::Int64Type) },
+            raw::CONFIG_TYPE_FLOAT => { Some(OptionType::FloatType) },
+            raw::CONFIG_TYPE_STRING => { Some(OptionType::StringType) },
+            raw::CONFIG_TYPE_BOOL => { Some(OptionType::BooleanType) },
+            _ => { Some(OptionType::UndefinedType) }
         }
     }
     
     // present option value as i32
-    pub fn as_integer(&mut self) -> i32 {
+    pub fn as_integer(&mut self) -> Option<i32> {
+        if self.element.is_none() {
+            return None
+        }
+         
         unsafe {
             let result =
                 raw::config_setting_get_int(&mut self.element.unwrap());
-            result
+            Some(result)
         }
     }
     
     
     // present option value as i64
-    pub fn as_int64(&mut self) -> i64 {
+    pub fn as_int64(&mut self) -> Option<i64> {
+        if self.element.is_none() {
+            return None
+        }
+        
         unsafe {
             let result =
                 raw::config_setting_get_int64(&mut self.element.unwrap());
-            result
+            Some(result)
         }
     }
     
     // present option value as f64
-    pub fn as_float(&mut self) -> f64 {
+    pub fn as_float(&mut self) -> Option<f64> {
+        if self.element.is_none() {
+            return None
+        }
+        
         unsafe {
             let result =
                 raw::config_setting_get_float(&mut self.element.unwrap());
-            result
+            Some(result)
         }
     }
     
     // present option value as bool
-    pub fn as_bool(&mut self) -> bool {
+    pub fn as_bool(&mut self) -> Option<bool> {
+        if self.element.is_none() {
+            return None
+        }
+        
         unsafe {
             let result =
                 raw::config_setting_get_bool(&mut self.element.unwrap());
-            result == raw::CONFIG_TRUE
+            Some(result == raw::CONFIG_TRUE)
         }
     }
     
     // present option value as string
-    pub fn as_string(&mut self) -> String {
+    pub fn as_string(&mut self) -> Option<String> {
+        if self.element.is_none() {
+            return None
+        }
+        
         unsafe {
             let result =
                 CStr::from_ptr(raw::config_setting_get_string(
                     &mut self.element.unwrap()));
-            result.to_str().unwrap().to_string()
+            Some(result.to_str().unwrap().to_string())
         }
     }
 }
