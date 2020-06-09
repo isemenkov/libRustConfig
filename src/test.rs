@@ -34,13 +34,12 @@ use crate::config::{Config, OptionType};
 fn test_create() {
     let mut cfg = Config::new();
     cfg.load_from_string(
-        "section1 : { integer_value = -12; boolean_value = false; };".to_string()
+        "section1 : { integer_value = -12; boolean_value = false; };"
     );
     
-    assert!(cfg.value("section1".to_string()).is_root().unwrap());
-    assert!(cfg.value("section1".to_string()).is_section().unwrap());
-    assert_eq!(cfg.value("section1.integer_value".to_string()).as_integer().unwrap(), 
-        -12);
-    assert_eq!(cfg.value("section1.integer_value".to_string()).value_type().unwrap(),
+    assert!(cfg.value("section1").is_root().unwrap());
+    assert!(cfg.value("section1").is_section().unwrap());
+    assert_eq!(cfg.value("section1.integer_value").as_integer().unwrap(), -12);
+    assert_eq!(cfg.value("section1.integer_value").value_type().unwrap(),
         OptionType::IntegerType);
 }

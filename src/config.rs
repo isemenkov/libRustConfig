@@ -91,11 +91,12 @@ impl Config {
     }
     
     // Parse configuration from string
-    pub fn load_from_string(&mut self, config_string : String) -> () {
+    pub fn load_from_string<S>(&mut self, config_string : S) -> () 
+        where S: Into<String> {
         unsafe {
             let result = raw::config_read_string(
                 &mut self.config, 
-                config_string.as_ptr() as *const i8
+                config_string.into().as_ptr() as *const i8
             );
             
             if result == raw::CONFIG_TRUE {
@@ -107,11 +108,12 @@ impl Config {
         }
     }
     
-    pub fn value(&mut self, path : String) -> OptionReader {
+    pub fn value<S>(&mut self, path : S) -> OptionReader
+        where S: Into<String> {
         unsafe {
             let option = raw::config_setting_lookup(
                 &mut self.root_element.unwrap(), 
-                path.as_ptr() as *const i8
+                path.into().as_ptr() as *const i8
             );
                 
             OptionReader {
