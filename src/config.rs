@@ -43,7 +43,6 @@ pub struct Config {
 // Option value type
 #[derive(Debug, PartialEq)]
 pub enum OptionType {
-    UndefinedType,
     IntegerType,
     Int64Type,
     FloatType,
@@ -135,7 +134,7 @@ impl Drop for Config {
 impl OptionReader {
     
     // Constructor
-    pub fn new() -> OptionReader {
+    fn new() -> OptionReader {
         OptionReader {
             element : None
         }
@@ -220,7 +219,7 @@ impl OptionReader {
             raw::CONFIG_TYPE_FLOAT => { Some(OptionType::FloatType) },
             raw::CONFIG_TYPE_STRING => { Some(OptionType::StringType) },
             raw::CONFIG_TYPE_BOOL => { Some(OptionType::BooleanType) },
-            _ => { Some(OptionType::UndefinedType) }
+            _ => { None }
         }
     }
     
