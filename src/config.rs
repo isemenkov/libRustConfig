@@ -30,7 +30,7 @@
 
 use libconfig_sys as raw;
 
-use std::{mem, path};
+use std::{mem::MaybeUninit, path};
 use std::ffi::{CStr, CString};
 
 // Configuration file
@@ -50,6 +50,7 @@ pub enum OptionType {
 }
 
 // Writer for configuration option
+#[derive(Clone, Copy)]
 pub struct OptionWriter {
     element : Option<raw::config_setting_t>
 }
@@ -74,18 +75,18 @@ impl Config {
     
     // Constructor
     pub fn new() -> Config {
-        let mut c = mem::MaybeUninit::<raw::config_t>::uninit();
+        let mut c = MaybeUninit::<raw::config_t>::uninit();
         let mut cfg = unsafe {
             raw::config_init(c.as_mut_ptr());
             c.assume_init()
         };
         
-        let result = raw::config_root_setting(&mut cfg);
-        let element = {
-            if result.is_null() {
+        let option = raw::config_root_setting(&mut cfg);
+        let element = {    
+            if option.is_null() {
                 None
-            } else {    
-                unsafe { Some(*result) }
+            } else {
+                Some(unsafe {*option})
             }
         };
     
@@ -97,7 +98,6 @@ impl Config {
     
     // Load config file from file and parse it
     pub fn load_from_file(&mut self, file_name : &path::Path) -> Result<()> {
-            
         if file_name.exists() {
             unsafe {
                 let result = raw::config_read_file(
@@ -123,36 +123,40 @@ impl Config {
     // Parse configuration from string
     pub fn load_from_string<S>(&mut self, config_string : S) -> Result<()>
         where S: Into<String> {
-            
-        unsafe {
-            let result = raw::config_read_string(
+          
+        let result = unsafe { 
+            raw::config_read_string(
                 &mut self.config, 
-                CString::new(config_string.into()).unwrap().as_ptr()
-            );
+                CString::new(config_string.into()).unwrap().as_ptr())
+        };
+        
+        if result == raw::CONFIG_TRUE {
+            let option = raw::config_root_setting(&mut self.config);
             
-            if result == raw::CONFIG_TRUE {
-                self.root_element = 
-                    Some(*raw::config_root_setting(&mut self.config));
-                Ok(())
-            } else {
+            if option.is_null() {
                 self.root_element = None;
                 Err(Errors::ParseError)
+            } else {
+                self.root_element = Some(unsafe {*option});
+                Ok(())
             }
+        } else {
+            self.root_element = None;
+            Err(Errors::ParseError)
         }
     }
    
    // Save current config to file
     pub fn save_to_file(&mut self, file_name : &path::Path) -> Result<()> {
-        unsafe {
-            let result = raw::config_write_file(&mut self.config, 
-                CString::new(file_name.as_os_str().to_str().unwrap())
-                    .unwrap().as_ptr());
-                
-            if result == raw::CONFIG_TRUE {
-                Ok(())
-            } else {
-                Err(Errors::SaveError)
-            }
+        let result = unsafe { raw::config_write_file(&mut self.config, 
+            CString::new(file_name.as_os_str().to_str().unwrap())
+                .unwrap().as_ptr())
+        };
+            
+        if result == raw::CONFIG_TRUE {
+            Ok(())
+        } else {
+            Err(Errors::SaveError)
         }
     }
     
@@ -227,6 +231,34 @@ impl OptionWriter {
         }
     }
     
+    // Add new integer value to current group
+    pub fn write_integer<S>(&mut self, name : S, value : i32) -> 
+        Option<OptionWriter> where S: Into<String> {
+            
+        if self.element.is_none() {
+            return None
+        };
+        
+        let option = unsafe {
+            raw::config_setting_add(&mut self.element.unwrap(),
+                CString::new(name.into()).unwrap().as_ptr(),
+                raw::CONFIG_TYPE_INT as i32)
+        };
+        
+        if option.is_null() {
+            None
+        } else {
+            let result = unsafe {
+                raw::config_setting_set_int(option, value)  
+            };
+            
+            if result == raw::CONFIG_TRUE {
+                Some(*self)
+            } else {
+                None
+            }
+        }
+    }
 }
 
 impl OptionReader {
