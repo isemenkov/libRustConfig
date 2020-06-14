@@ -36,7 +36,7 @@ use std::ffi::{CStr, CString};
 // Configuration file
 pub struct Config {
     config : raw::config_t,
-    root_element : Option<raw::config_setting_t>
+    pub root_element : Option<raw::config_setting_t>
 }
 
 // Option value type
@@ -49,6 +49,12 @@ pub enum OptionType {
     BooleanType
 }
 
+// Writer for configuration option
+pub struct OptionWriter {
+    element : Option<raw::config_setting_t>
+}
+
+// Reader for configuration option
 pub struct OptionReader {
     element : Option<raw::config_setting_t>
 }
@@ -61,6 +67,7 @@ pub enum Errors {
     SaveError
 }
 
+// Result type
 type Result<T> = std::result::Result<T, Errors>;
 
 impl Config {
@@ -68,14 +75,23 @@ impl Config {
     // Constructor
     pub fn new() -> Config {
         let mut c = mem::MaybeUninit::<raw::config_t>::uninit();
-        let cfg = unsafe {
+        let mut cfg = unsafe {
             raw::config_init(c.as_mut_ptr());
             c.assume_init()
         };
         
+        let result = raw::config_root_setting(&mut cfg);
+        let element = {
+            if result.is_null() {
+                None
+            } else {    
+                unsafe { Some(*result) }
+            }
+        };
+    
         Config {
             config : cfg,
-            root_element : None
+            root_element : element
         }
     }
     
@@ -93,19 +109,21 @@ impl Config {
                 if result == raw::CONFIG_TRUE {
                     self.root_element = 
                         Some(*raw::config_root_setting(&mut self.config));
-                        return Ok(())
+                    Ok(())
                 } else {
                     self.root_element = None;
-                    return Err(Errors::ParseError)
+                    Err(Errors::ParseError)
                 }
             }
+        } else {
+            Err(Errors::FileNotExists)
         }
-        Err(Errors::FileNotExists)
     }
     
     // Parse configuration from string
     pub fn load_from_string<S>(&mut self, config_string : S) -> Result<()>
         where S: Into<String> {
+            
         unsafe {
             let result = raw::config_read_string(
                 &mut self.config, 
@@ -115,7 +133,7 @@ impl Config {
             if result == raw::CONFIG_TRUE {
                 self.root_element = 
                     Some(*raw::config_root_setting(&mut self.config));
-                    Ok(())
+                Ok(())
             } else {
                 self.root_element = None;
                 Err(Errors::ParseError)
@@ -142,26 +160,30 @@ impl Config {
     pub fn include_dir(&mut self, path : &path::Path) -> () {
         unsafe {
             raw::config_set_include_dir(&mut self.config, 
-                CString::new(path.as_os_str().to_str().unwrap()).unwrap().as_ptr())
+                CString::new(path.as_os_str().to_str().unwrap())
+                    .unwrap().as_ptr())
         }
     }
         
     // Read value from path
-    pub fn value<S>(&mut self, path : S) -> OptionReader
+    pub fn value<S>(&mut self, path : S) -> Option<OptionReader>
         where S: Into<String> {
-        unsafe {
-            let option = raw::config_setting_lookup(
-                &mut self.root_element.unwrap(), 
-                CString::new(path.into()).unwrap().as_ptr()
-            );
-             
-            let mut result = OptionReader::new();
-            if option.is_null() {
-                result           
-            } else {
-                result.element = Some(*option);
-                result
-            }
+        
+        if self.root_element.is_none() {
+            return None
+        } else {
+            OptionReader::new(self.root_element).value(path)
+        }
+    }
+    
+    // Create new group section
+    pub fn create_section<S>(&mut self, path : S) -> Option<OptionWriter>
+        where S: Into<String> {
+        
+        if self.root_element.is_none() {
+            None
+        } else {
+            OptionWriter::new(self.root_element).create_section(path)
         }
     }
 }
@@ -175,12 +197,44 @@ impl Drop for Config {
     }
 }
 
+impl OptionWriter {
+    
+    // Constructor
+    fn new(elem : Option<raw::config_setting_t>) -> OptionWriter {
+        OptionWriter {
+            element : elem
+        }
+    }
+    
+    // Create new group section
+    pub fn create_section<S>(&mut self, path : S) -> Option<OptionWriter> 
+        where S: Into<String> {
+            
+        if self.element.is_none() {
+            return None
+        }
+        
+        let option = unsafe {
+            raw::config_setting_add(&mut self.element.unwrap(), 
+                CString::new(path.into()).unwrap().as_ptr(), 
+                raw::CONFIG_TYPE_GROUP as i32)
+        };
+        
+        if option.is_null() {
+            None
+        } else {
+            Some(OptionWriter::new(Some(unsafe {*option})))
+        }
+    }
+    
+}
+
 impl OptionReader {
     
     // Constructor
-    fn new() -> OptionReader {
+    fn new(elem : Option<raw::config_setting_t>) -> OptionReader {
         OptionReader {
-            element : None
+            element : elem
         }
     }
     
@@ -190,9 +244,7 @@ impl OptionReader {
             return None;
         }
         
-        let result =
-            raw::config_setting_is_root(&self.element.unwrap());
-        
+        let result = raw::config_setting_is_root(&self.element.unwrap());
         Some(result == raw::CONFIG_TRUE)
     }
      
@@ -202,9 +254,7 @@ impl OptionReader {
             return None;
         }
         
-        let result =
-            raw::config_setting_is_group(&self.element.unwrap());
-        
+        let result = raw::config_setting_is_group(&self.element.unwrap());
         Some(result == raw::CONFIG_TRUE)      
     }
     
@@ -214,9 +264,7 @@ impl OptionReader {
             return None
         }
         
-        let result =
-            raw::config_setting_is_array(&self.element.unwrap());
-        
+        let result = raw::config_setting_is_array(&self.element.unwrap());
         Some(result == raw::CONFIG_TRUE)
     }
     
@@ -226,9 +274,7 @@ impl OptionReader {
             return None
         }
         
-        let result =
-            raw::config_setting_is_list(&self.element.unwrap());
-        
+        let result = raw::config_setting_is_list(&self.element.unwrap());
         Some(result == raw::CONFIG_TRUE)
     }
     
@@ -238,13 +284,12 @@ impl OptionReader {
             return None
         }
         
-        unsafe {
-            let result =
-                raw::config_setting_parent(&self.element.unwrap());
-            
-            Some(OptionReader {
-                element : Some(*result)
-            })
+        let result = raw::config_setting_parent(&self.element.unwrap());
+        
+        if result.is_null() {
+            None
+        } else {
+            Some(OptionReader::new(Some(unsafe {*result})))
         }
     }
     
@@ -254,9 +299,7 @@ impl OptionReader {
             return None
         }
         
-        let result =
-            raw::config_setting_type(&self.element.unwrap());
-        
+        let result = raw::config_setting_type(&self.element.unwrap());
         match result as i16 {
             raw::CONFIG_TYPE_INT => { Some(OptionType::IntegerType) },
             raw::CONFIG_TYPE_INT64 => { Some(OptionType::Int64Type) },
@@ -267,17 +310,36 @@ impl OptionReader {
         }
     }
     
+    // Read value from path
+    pub fn value<S>(&mut self, path : S) -> Option<OptionReader>
+        where S: Into<String> {
+        
+        if self.element.is_none() {
+            return None
+        }
+        
+        let option = unsafe { raw::config_setting_lookup(
+            &mut self.element.unwrap(), CString::new(path.into())
+                .unwrap().as_ptr())
+        };
+         
+        if option.is_null() {
+            None          
+        } else {
+            Some(OptionReader::new(Some(unsafe {*option})))
+        }  
+    }
+    
     // Present option value as i32
     pub fn as_integer(&mut self) -> Option<i32> {
         if self.element.is_none() {
             return None
         }
-         
-        unsafe {
-            let result =
-                raw::config_setting_get_int(&mut self.element.unwrap());
-            Some(result)
-        }
+        
+        let result = unsafe { 
+            raw::config_setting_get_int(&mut self.element.unwrap()) 
+        };
+        Some(result)
     }
     
     // Present option value as i32, return def if value not found
@@ -294,11 +356,10 @@ impl OptionReader {
             return None
         }
         
-        unsafe {
-            let result =
-                raw::config_setting_get_int64(&mut self.element.unwrap());
-            Some(result)
-        }
+        let result = unsafe {
+            raw::config_setting_get_int64(&mut self.element.unwrap())
+        };
+        Some(result)
     }
     
     // Present option value as i64, return def if value not exists
@@ -315,11 +376,10 @@ impl OptionReader {
             return None
         }
         
-        unsafe {
-            let result =
-                raw::config_setting_get_float(&mut self.element.unwrap());
-            Some(result)
-        }
+        let result = unsafe {
+            raw::config_setting_get_float(&mut self.element.unwrap())
+        };
+        Some(result)
     }
     
     // Present option value as f64, return def if value not exists
@@ -336,11 +396,10 @@ impl OptionReader {
             return None
         }
         
-        unsafe {
-            let result =
-                raw::config_setting_get_bool(&mut self.element.unwrap());
-            Some(result == raw::CONFIG_TRUE)
-        }
+        let result = unsafe {
+            raw::config_setting_get_bool(&mut self.element.unwrap())
+        };
+        Some(result == raw::CONFIG_TRUE)
     }
     
     // Present option value as bool, return def if value not exists
@@ -357,12 +416,11 @@ impl OptionReader {
             return None
         }
         
-        unsafe {
-            let result =
-                CStr::from_ptr(raw::config_setting_get_string(
-                    &mut self.element.unwrap()));
-            Some(result.to_str().unwrap().to_string())
-        }
+        let result = unsafe {
+            CStr::from_ptr(raw::config_setting_get_string(
+                &mut self.element.unwrap()))
+        };
+        Some(result.to_str().unwrap().to_string())
     }
     
     // Present option value as string, return def if value not exists
