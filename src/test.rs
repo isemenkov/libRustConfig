@@ -30,16 +30,42 @@
 
 use crate::config::{Config, OptionType};
 
+macro_rules! assert_delta {
+    ($x:expr, $y:expr, $d:expr) => {
+        if !($x - $y < $d || $y - $x < $d) { panic!(); }
+    }
+}
+
 #[test]
-fn test_create() {
+fn test_parse_config_string() {
     let mut cfg = Config::new();
-    cfg.load_from_string(
-        "section1 : { integer_value = -12; boolean_value = false; };"
-    );
+    assert_eq!(cfg.load_from_string(
+        "section1 : { 
+            integer_value = -12; 
+            boolean_value = false;
+            long_integer_value = 99991L;
+            float_value = 0.99991;
+        };"
+    ).is_ok(), true);
     
     assert!(cfg.value("section1").is_root().unwrap());
     assert!(cfg.value("section1").is_section().unwrap());
-    assert_eq!(cfg.value("section1.integer_value").as_integer().unwrap(), -12);
+    
     assert_eq!(cfg.value("section1.integer_value").value_type().unwrap(),
         OptionType::IntegerType);
+    assert_eq!(cfg.value("section1.integer_value").as_integer().unwrap(), -12);
+    
+    assert_eq!(cfg.value("section1.boolean_value").value_type().unwrap(),
+        OptionType::BooleanType);
+    assert_eq!(cfg.value("section1.boolean_value").as_bool().unwrap(), false);
+    
+    assert_eq!(cfg.value("section1.long_integer_value").value_type().unwrap(),
+       OptionType::Int64Type);
+    assert_eq!(cfg.value("section1.long_integer_value").as_int64().unwrap(),
+        99991);
+     
+    assert_eq!(cfg.value("section1.float_value").value_type().unwrap(),
+        OptionType::FloatType);
+    assert_delta!(cfg.value("section1.float_value").as_float().unwrap(),
+        0.99991, 0.00001);
 }

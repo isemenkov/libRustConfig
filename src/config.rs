@@ -30,9 +30,8 @@
 
 use libconfig_sys as raw;
 
-use std::mem;
-use std::path;
-use std::ffi::CStr;
+use std::{mem, path};
+use std::ffi::{CStr, CString};
 
 // Configuration file
 pub struct Config {
@@ -54,6 +53,16 @@ pub struct OptionReader {
     element : Option<raw::config_setting_t>
 }
 
+// Errors
+#[derive(Debug, PartialEq)]
+pub enum Errors {
+    ParseError,
+    FileNotExists,
+    SaveError
+}
+
+type Result<T> = std::result::Result<T, Errors>;
+
 impl Config {
     
     // Constructor
@@ -71,52 +80,87 @@ impl Config {
     }
     
     // Load config file from file and parse it
-    pub fn load_from_file(&mut self, file_name : &path::Path) -> () {
+    pub fn load_from_file(&mut self, file_name : &path::Path) -> Result<()> {
+            
         if file_name.exists() {
             unsafe {
                 let result = raw::config_read_file(
                     &mut self.config, 
-                    file_name.as_os_str().to_str().unwrap().as_ptr() as *const i8
+                    CString::new(file_name.as_os_str().to_str().unwrap())
+                        .unwrap().as_ptr()
                 );
                 
                 if result == raw::CONFIG_TRUE {
                     self.root_element = 
                         Some(*raw::config_root_setting(&mut self.config));
+                        return Ok(())
                 } else {
-                    self.root_element = None
+                    self.root_element = None;
+                    return Err(Errors::ParseError)
                 }
             }
         }
+        Err(Errors::FileNotExists)
     }
     
     // Parse configuration from string
-    pub fn load_from_string<S>(&mut self, config_string : S) -> () 
+    pub fn load_from_string<S>(&mut self, config_string : S) -> Result<()>
         where S: Into<String> {
         unsafe {
             let result = raw::config_read_string(
                 &mut self.config, 
-                config_string.into().as_ptr() as *const i8
+                CString::new(config_string.into()).unwrap().as_ptr()
             );
             
             if result == raw::CONFIG_TRUE {
                 self.root_element = 
                     Some(*raw::config_root_setting(&mut self.config));
+                    Ok(())
             } else {
-                self.root_element = None
+                self.root_element = None;
+                Err(Errors::ParseError)
+            }
+        }
+    }
+   
+   // Save current config to file
+    pub fn save_to_file(&mut self, file_name : &path::Path) -> Result<()> {
+        unsafe {
+            let result = raw::config_write_file(&mut self.config, 
+                CString::new(file_name.as_os_str().to_str().unwrap())
+                    .unwrap().as_ptr());
+                
+            if result == raw::CONFIG_TRUE {
+                Ok(())
+            } else {
+                Err(Errors::SaveError)
             }
         }
     }
     
+    // Set current config include directory
+    pub fn include_dir(&mut self, path : &path::Path) -> () {
+        unsafe {
+            raw::config_set_include_dir(&mut self.config, 
+                CString::new(path.as_os_str().to_str().unwrap()).unwrap().as_ptr())
+        }
+    }
+        
+    // Read value from path
     pub fn value<S>(&mut self, path : S) -> OptionReader
         where S: Into<String> {
         unsafe {
             let option = raw::config_setting_lookup(
                 &mut self.root_element.unwrap(), 
-                path.into().as_ptr() as *const i8
+                CString::new(path.into()).unwrap().as_ptr()
             );
-                
-            OptionReader {
-                element : Some(*option)
+             
+            let mut result = OptionReader::new();
+            if option.is_null() {
+                result           
+            } else {
+                result.element = Some(*option);
+                result
             }
         }
     }
@@ -223,7 +267,7 @@ impl OptionReader {
         }
     }
     
-    // present option value as i32
+    // Present option value as i32
     pub fn as_integer(&mut self) -> Option<i32> {
         if self.element.is_none() {
             return None
@@ -236,8 +280,15 @@ impl OptionReader {
         }
     }
     
+    // Present option value as i32, return def if value not found
+    pub fn as_integer_default (&mut self, def : i32) -> i32 {
+        match self.as_integer() {
+            Some(x) => { x },
+            None => { def }
+        }
+    }
     
-    // present option value as i64
+    // Present option value as i64
     pub fn as_int64(&mut self) -> Option<i64> {
         if self.element.is_none() {
             return None
@@ -250,7 +301,15 @@ impl OptionReader {
         }
     }
     
-    // present option value as f64
+    // Present option value as i64, return def if value not exists
+    pub fn as_int64_default(&mut self, def : i64) -> i64 {
+        match self.as_int64() {
+            Some(x) => { x },
+            None => { def }
+        }
+    }
+    
+    // Present option value as f64
     pub fn as_float(&mut self) -> Option<f64> {
         if self.element.is_none() {
             return None
@@ -263,7 +322,15 @@ impl OptionReader {
         }
     }
     
-    // present option value as bool
+    // Present option value as f64, return def if value not exists
+    pub fn as_float_default(&mut self, def : f64) -> f64 {
+        match self.as_float() {
+            Some(x) => { x },
+            None => { def }
+        }
+    }
+    
+    // Present option value as bool
     pub fn as_bool(&mut self) -> Option<bool> {
         if self.element.is_none() {
             return None
@@ -276,7 +343,15 @@ impl OptionReader {
         }
     }
     
-    // present option value as string
+    // Present option value as bool, return def if value not exists
+    pub fn as_bool_default(&mut self, def : bool) -> bool {
+        match self.as_bool() {
+            Some(x) => { x },
+            None => { def }
+        }
+    }
+    
+    // Present option value as string
     pub fn as_string(&mut self) -> Option<String> {
         if self.element.is_none() {
             return None
@@ -287,6 +362,14 @@ impl OptionReader {
                 CStr::from_ptr(raw::config_setting_get_string(
                     &mut self.element.unwrap()));
             Some(result.to_str().unwrap().to_string())
+        }
+    }
+    
+    // Present option value as string, return def if value not exists
+    pub fn as_string_default(&mut self, def : String) -> String {
+        match self.as_string() {
+            Some(x) => { x },
+            None => { def } 
         }
     }
 }
