@@ -234,169 +234,122 @@ extern "C" {
         *const c_schar, value : *const *mut c_schar) -> c_int;
 }
 
-pub fn config_get_include_dir (config : *const config_t) -> *const c_schar {
-    unsafe {
-        (*config).include_dir
+pub fn config_get_include_dir (config : &config_t) -> *const c_schar {
+    config.include_dir
+}
+
+pub fn config_setting_type (setting : &config_setting_t) -> c_int {
+    setting.setting_type as c_int
+}
+
+pub fn config_setting_is_group (setting : &config_setting_t) -> c_int {
+    match setting.setting_type {
+        CONFIG_TYPE_GROUP => { CONFIG_TRUE },
+        _ => { CONFIG_FALSE }
     }
 }
 
-pub fn config_setting_type (setting : *const config_setting_t) -> c_int {
-    unsafe {
-        (*setting).setting_type as c_int
+pub fn config_setting_is_array (setting : &config_setting_t) -> c_int {
+    match setting.setting_type {
+        CONFIG_TYPE_ARRAY => { CONFIG_TRUE },
+        _ => { CONFIG_FALSE }
     }
 }
 
-pub fn config_setting_is_group (setting : *const config_setting_t) -> c_int {
-    unsafe {
-        match (*setting).setting_type {
-            CONFIG_TYPE_GROUP => { CONFIG_TRUE },
-            _ => { CONFIG_FALSE },
-        }
+pub fn config_setting_is_list (setting : &config_setting_t) -> c_int {
+    match setting.setting_type {
+        CONFIG_TYPE_LIST => { CONFIG_TRUE },
+        _ => { CONFIG_FALSE }
     }
 }
 
-pub fn config_setting_is_array (setting : *const config_setting_t) -> c_int {
-    unsafe {
-        match (*setting).setting_type {
-            CONFIG_TYPE_ARRAY => { CONFIG_TRUE },
-            _ => { CONFIG_FALSE },
-        }
+pub fn config_setting_is_aggregate (setting : &config_setting_t) -> c_int {
+    match setting.setting_type {
+        CONFIG_TYPE_GROUP |
+        CONFIG_TYPE_LIST |
+        CONFIG_TYPE_ARRAY => { CONFIG_TRUE },
+        _ => { CONFIG_FALSE }
     }
 }
 
-pub fn config_setting_is_list (setting : *const config_setting_t) -> c_int {
-    unsafe {
-        match (*setting).setting_type {
-            CONFIG_TYPE_LIST => { CONFIG_TRUE },
-            _ => { CONFIG_FALSE },
-        }
+pub fn config_setting_is_number (setting : &config_setting_t) -> c_int {
+    match setting.setting_type {
+        CONFIG_TYPE_INT |
+        CONFIG_TYPE_INT64 |
+        CONFIG_TYPE_FLOAT => { CONFIG_TRUE },
+        _ => { CONFIG_FALSE }
     }
 }
 
-pub fn config_setting_is_aggregate (setting : *const config_setting_t)
-    -> c_int {
-    unsafe {
-        match (*setting).setting_type {
-            CONFIG_TYPE_GROUP |
-            CONFIG_TYPE_LIST |
-            CONFIG_TYPE_ARRAY => { CONFIG_TRUE },
-            _ => { CONFIG_FALSE }
-        }
+pub fn config_setting_is_scalar (setting : &config_setting_t) -> c_int {
+    match setting.setting_type {
+        CONFIG_TYPE_BOOL |
+        CONFIG_TYPE_STRING |
+        CONFIG_TYPE_INT |
+        CONFIG_TYPE_INT64 |
+        CONFIG_TYPE_FLOAT => { CONFIG_TRUE },
+        _ => { CONFIG_FALSE }
     }
 }
 
-pub fn config_setting_is_number (setting : *const config_setting_t) -> c_int {
-    unsafe {
-        match (*setting).setting_type {
-            CONFIG_TYPE_INT |
-            CONFIG_TYPE_INT64 |
-            CONFIG_TYPE_FLOAT => { CONFIG_TRUE },
-            _ => { CONFIG_FALSE },
-        }
-    }
+pub fn config_setting_name (setting : &config_setting_t) -> *const c_schar {
+    setting.name
 }
 
-pub fn config_setting_is_scalar (setting : *const config_setting_t) -> c_int {
-    unsafe {
-        match (*setting).setting_type {
-            CONFIG_TYPE_BOOL |
-            CONFIG_TYPE_STRING |
-            CONFIG_TYPE_INT |
-            CONFIG_TYPE_INT64 |
-            CONFIG_TYPE_FLOAT => { CONFIG_TRUE },
-            _ => { CONFIG_FALSE },
-        }
-    }
-}
-
-pub fn config_setting_name (setting : *const config_setting_t)
-    -> *const c_schar {
-    unsafe {
-        (*setting).name
-    }
-}
-
-pub fn config_setting_parent (setting : *const config_setting_t)
+pub fn config_setting_parent (setting : &config_setting_t)
     -> *mut config_setting_t {
-    unsafe {
-        (*setting).parent
+    setting.parent
+}
+
+pub fn config_setting_is_root (setting : &config_setting_t) -> c_int {
+    if setting.parent.is_null() {
+        CONFIG_TRUE
+    } else {
+        CONFIG_FALSE
     }
 }
 
-pub fn config_setting_is_root (setting : *const config_setting_t) -> c_int {
-    unsafe {
-        if (*setting).parent.is_null() {
-            CONFIG_TRUE
-        } else {
-            CONFIG_FALSE
-        }
-    }
+pub fn config_root_setting (config : &config_t) -> *mut config_setting_t {
+    config.root
 }
 
-pub fn config_root_setting (config : *const config_t) -> *mut config_setting_t {
-    unsafe {
-        (*config).root
-    }
+pub fn config_set_default_format (config : &mut config_t, value : c_short) {
+    config.default_format = value;
 }
 
-pub fn config_set_default_format (config : *mut config_t, value : c_short) {
-    unsafe {
-        (*config).default_format = value;
-    }
+pub fn config_get_default_format (config : &config_t) -> c_short {
+    config.default_format
 }
 
-pub fn config_get_default_format (config : *const config_t) -> c_short {
-    unsafe {
-        (*config).default_format
-    }
+pub fn config_set_tab_width (config : &mut config_t, value : c_ushort) {
+    config.tab_width = value & 0x0F;
 }
 
-pub fn config_set_tab_width (config : *mut config_t, value : c_ushort) {
-    unsafe {
-        (*config).tab_width = value & 0x0F;
-    }
+pub fn config_get_tab_width (config : &config_t) -> c_ushort {
+    config.tab_width
 }
 
-pub fn config_get_tab_width (config : *const config_t) -> c_ushort {
-    unsafe {
-        (*config).tab_width
-    }
+pub fn config_setting_source_line (config : &config_setting_t) -> c_uint {
+    config.line
 }
 
-pub fn config_setting_source_line (config : *const config_setting_t)
-    -> c_uint {
-    unsafe {
-        (*config).line
-    }
-}
-
-pub fn config_setting_source_file (config : *const config_setting_t)
+pub fn config_setting_source_file (config : &config_setting_t) 
     -> *const c_schar {
-    unsafe {
-        (*config).file
-    }
+    config.file
 }
 
-pub fn config_error_text (config : *const config_t) -> *const c_schar {
-    unsafe {
-        (*config).error_text
-    }
+pub fn config_error_text (config : &config_t) -> *const c_schar {
+    config.error_text
 }
 
-pub fn config_error_file (config : *const config_t) -> *const c_schar {
-    unsafe {
-        (*config).error_file
-    }
+pub fn config_error_file (config : &config_t) -> *const c_schar {
+    config.error_file
 }
 
-pub fn config_error_line (config : *const config_t) -> c_int {
-    unsafe {
-        (*config).error_line
-    }
+pub fn config_error_line (config : &config_t) -> c_int {
+    config.error_line
 }
 
-pub fn config_error_type (config : *const config_t) -> config_error_t {
-    unsafe {
-        (*config).error_type
-    }
+pub fn config_error_type (config : &config_t) -> config_error_t {
+    config.error_type
 }

@@ -76,12 +76,12 @@ impl Config {
     // Constructor
     pub fn new() -> Config {
         let mut c = MaybeUninit::<raw::config_t>::uninit();
-        let mut cfg = unsafe {
+        let cfg = unsafe {
             raw::config_init(c.as_mut_ptr());
             c.assume_init()
         };
         
-        let option = raw::config_root_setting(&mut cfg);
+        let option = raw::config_root_setting(&cfg);
         let element = {    
             if option.is_null() {
                 None
@@ -108,7 +108,7 @@ impl Config {
                 
                 if result == raw::CONFIG_TRUE {
                     self.root_element = 
-                        Some(*raw::config_root_setting(&mut self.config));
+                        Some(*raw::config_root_setting(&self.config));
                     Ok(())
                 } else {
                     self.root_element = None;
@@ -131,7 +131,7 @@ impl Config {
         };
         
         if result == raw::CONFIG_TRUE {
-            let option = raw::config_root_setting(&mut self.config);
+            let option = raw::config_root_setting(&self.config);
             
             if option.is_null() {
                 self.root_element = None;

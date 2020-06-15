@@ -82,12 +82,8 @@ fn test_parse_config_string() {
 #[test]
 fn test_create_section() {
     let mut cfg = Config::new();
-    assert_eq!(cfg.root_element.is_some(), true);
     let mut root = cfg.create_section("root_section").unwrap();
-    assert_eq!(cfg.root_element.is_some(), true);
-    assert_eq!(cfg.value("root_section").is_some(), true);
     root.write_integer("test", 123);
-    assert_eq!(cfg.root_element.is_some(), true);
     
     assert_eq!(cfg.save_to_file(Path::new("test.cfg")).is_ok(), true);
     
