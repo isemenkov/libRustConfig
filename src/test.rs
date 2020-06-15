@@ -31,10 +31,37 @@
 use crate::config::{Config, OptionType};
 use std::path::Path;
 
+use std::{mem::MaybeUninit};
+use libconfig_sys as raw;
+use std::ffi::CString;
+
 macro_rules! assert_delta {
     ($x:expr, $y:expr, $d:expr) => {
         if !($x - $y < $d || $y - $x < $d) { panic!(); }
     }
+}
+
+#[test]
+fn test_raw_api() {
+    let mut c = MaybeUninit::<raw::config_t>::uninit();
+    let mut cfg = unsafe {
+        raw::config_init(c.as_mut_ptr());
+        c.assume_init()
+    };
+
+    let root = raw::config_root_setting(&cfg);
+    let group = unsafe { raw::config_setting_add(root, 
+        CString::new("Group").unwrap().as_ptr(), 
+        raw::CONFIG_TYPE_GROUP as i32)
+    };
+    let setting = unsafe { raw::config_setting_add(group,
+        CString::new("option1").unwrap().as_ptr(),
+        raw::CONFIG_TYPE_INT as i32)
+    };
+    unsafe { raw::config_setting_set_int(setting, 123) };
+    unsafe { raw::config_write_file(&mut cfg, 
+        CString::new("test.cfg").unwrap().as_ptr()) 
+    };
 }
 
 #[test]
@@ -83,7 +110,8 @@ fn test_parse_config_string() {
 fn test_create_section() {
     let mut cfg = Config::new();
     let mut root = cfg.create_section("root_section").unwrap();
-    root.write_integer("test", 123);
+    let mut group = root.create_section("group").unwrap();
+    let mut _val = group.write_integer("test", 123);
     
     assert_eq!(cfg.save_to_file(Path::new("test.cfg")).is_ok(), true);
     

@@ -36,7 +36,7 @@ use std::ffi::{CStr, CString};
 // Configuration file
 pub struct Config {
     config : raw::config_t,
-    pub root_element : Option<raw::config_setting_t>
+    root_element : Option<raw::config_setting_t>
 }
 
 // Option value type
@@ -152,7 +152,7 @@ impl Config {
             CString::new(file_name.as_os_str().to_str().unwrap())
                 .unwrap().as_ptr())
         };
-            
+        
         if result == raw::CONFIG_TRUE {
             Ok(())
         } else {
