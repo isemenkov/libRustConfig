@@ -170,7 +170,7 @@ impl Config {
     }
         
     // Read value from path
-    pub fn value<S>(&mut self, path : S) -> Option<OptionReader>
+    pub fn value<S>(&self, path : S) -> Option<OptionReader>
         where S: Into<String> {
         
         if self.root_element.is_none() {
@@ -181,7 +181,7 @@ impl Config {
     }
     
     // Create new group section
-    pub fn create_section<S>(&mut self, path : S) -> Option<OptionWriter>
+    pub fn create_section<S>(&self, path : S) -> Option<OptionWriter>
         where S: Into<String> {
         
         if self.root_element.is_none() {
@@ -211,7 +211,7 @@ impl OptionWriter {
     }
     
     // Create new group section
-    pub fn create_section<S>(&mut self, path : S) -> Option<OptionWriter> 
+    pub fn create_section<S>(&self, path : S) -> Option<OptionWriter> 
         where S: Into<String> {
             
         if self.element.is_none() {
@@ -232,7 +232,7 @@ impl OptionWriter {
     }
     
     // Add new integer value to current group
-    pub fn write_integer<S>(&mut self, name : S, value : i32) -> 
+    pub fn write_integer<S>(&self, name : S, value : i32) -> 
         Option<OptionWriter> where S: Into<String> {
             
         if self.element.is_none() {
@@ -343,7 +343,7 @@ impl OptionReader {
     }
     
     // Read value from path
-    pub fn value<S>(&mut self, path : S) -> Option<OptionReader>
+    pub fn value<S>(&self, path : S) -> Option<OptionReader>
         where S: Into<String> {
         
         if self.element.is_none() {
@@ -363,7 +363,7 @@ impl OptionReader {
     }
     
     // Present option value as i32
-    pub fn as_integer(&mut self) -> Option<i32> {
+    pub fn as_integer(&self) -> Option<i32> {
         if self.element.is_none() {
             return None
         }
@@ -375,7 +375,7 @@ impl OptionReader {
     }
     
     // Present option value as i32, return def if value not found
-    pub fn as_integer_default (&mut self, def : i32) -> i32 {
+    pub fn as_integer_default (&self, def : i32) -> i32 {
         match self.as_integer() {
             Some(x) => { x },
             None => { def }
@@ -383,7 +383,7 @@ impl OptionReader {
     }
     
     // Present option value as i64
-    pub fn as_int64(&mut self) -> Option<i64> {
+    pub fn as_int64(&self) -> Option<i64> {
         if self.element.is_none() {
             return None
         }
@@ -395,7 +395,7 @@ impl OptionReader {
     }
     
     // Present option value as i64, return def if value not exists
-    pub fn as_int64_default(&mut self, def : i64) -> i64 {
+    pub fn as_int64_default(&self, def : i64) -> i64 {
         match self.as_int64() {
             Some(x) => { x },
             None => { def }
@@ -403,7 +403,7 @@ impl OptionReader {
     }
     
     // Present option value as f64
-    pub fn as_float(&mut self) -> Option<f64> {
+    pub fn as_float(&self) -> Option<f64> {
         if self.element.is_none() {
             return None
         }
@@ -415,7 +415,7 @@ impl OptionReader {
     }
     
     // Present option value as f64, return def if value not exists
-    pub fn as_float_default(&mut self, def : f64) -> f64 {
+    pub fn as_float_default(&self, def : f64) -> f64 {
         match self.as_float() {
             Some(x) => { x },
             None => { def }
@@ -423,7 +423,7 @@ impl OptionReader {
     }
     
     // Present option value as bool
-    pub fn as_bool(&mut self) -> Option<bool> {
+    pub fn as_bool(&self) -> Option<bool> {
         if self.element.is_none() {
             return None
         }
@@ -435,7 +435,7 @@ impl OptionReader {
     }
     
     // Present option value as bool, return def if value not exists
-    pub fn as_bool_default(&mut self, def : bool) -> bool {
+    pub fn as_bool_default(&self, def : bool) -> bool {
         match self.as_bool() {
             Some(x) => { x },
             None => { def }
@@ -443,7 +443,7 @@ impl OptionReader {
     }
     
     // Present option value as string
-    pub fn as_string(&mut self) -> Option<String> {
+    pub fn as_string(&self) -> Option<String> {
         if self.element.is_none() {
             return None
         }
@@ -456,7 +456,7 @@ impl OptionReader {
     }
     
     // Present option value as string, return def if value not exists
-    pub fn as_string_default(&mut self, def : String) -> String {
+    pub fn as_string_default(&self, def : String) -> String {
         match self.as_string() {
             Some(x) => { x },
             None => { def } 

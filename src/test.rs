@@ -109,8 +109,8 @@ fn test_parse_config_string() {
 #[test]
 fn test_create_section() {
     let mut cfg = Config::new();
-    let mut root = cfg.create_section("root_section").unwrap();
-    let mut group = root.create_section("group").unwrap();
+    let root = cfg.create_section("root_section").unwrap();
+    let group = root.create_section("group").unwrap();
     let mut _val = group.write_integer("test", 123);
     
     assert_eq!(cfg.save_to_file(Path::new("test.cfg")).is_ok(), true);
