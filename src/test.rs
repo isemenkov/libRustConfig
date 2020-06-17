@@ -50,15 +50,17 @@ fn test_raw_api() {
     };
 
     let root = raw::config_root_setting(&cfg);
-    let group = unsafe { raw::config_setting_add(root, 
+    let _group = unsafe { raw::config_setting_add(root, 
         CString::new("Group").unwrap().as_ptr(), 
         raw::CONFIG_TYPE_GROUP as i32)
     };
+    /*
     let setting = unsafe { raw::config_setting_add(group,
         CString::new("option1").unwrap().as_ptr(),
         raw::CONFIG_TYPE_INT as i32)
     };
     unsafe { raw::config_setting_set_int(setting, 123) };
+    */
     unsafe { raw::config_write_file(&mut cfg, 
         CString::new("test.cfg").unwrap().as_ptr()) 
     };

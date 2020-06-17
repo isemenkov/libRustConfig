@@ -36,7 +36,8 @@ use std::ffi::{CStr, CString};
 // Configuration file
 pub struct Config {
     config : raw::config_t,
-    root_element : Option<raw::config_setting_t>
+    root_element : Option<raw::config_setting_t>,
+    dbg : Option<*mut raw::config_setting_t>
 }
 
 // Option value type
@@ -92,7 +93,8 @@ impl Config {
     
         Config {
             config : cfg,
-            root_element : element
+            root_element : element,
+            dbg : Some(option)
         }
     }
     
@@ -187,7 +189,13 @@ impl Config {
         if self.root_element.is_none() {
             None
         } else {
-            OptionWriter::new(self.root_element).create_section(path)
+            let option = unsafe {
+                raw::config_setting_add(self.dbg.unwrap(),
+                    CString::new(path.into()).unwrap().as_ptr(), 
+                    raw::CONFIG_TYPE_GROUP as i32)
+            };
+            //OptionWriter::new(self.root_element).create_section(path)
+            Some(OptionWriter::new(Some(unsafe{*option})))
         }
     }
 }
