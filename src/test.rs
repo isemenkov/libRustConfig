@@ -30,6 +30,7 @@
 
 use crate::config::{Config, OptionType};
 use std::path::Path;
+use std::fs;
 
 macro_rules! assert_delta {
     ($x:expr, $y:expr, $d:expr) => {
@@ -60,22 +61,22 @@ fn test_parse_config_string() {
     
     assert_eq!(cfg.value("section1.boolean_value").unwrap()
         .value_type().unwrap(), OptionType::BooleanType);
-    assert_eq!(cfg.value("section1.boolean_value").unwrap() 
+    assert_eq!(cfg.value("section1.boolean_value").unwrap()
         .as_bool().unwrap(), false);
     
     assert_eq!(cfg.value("section1.long_integer_value").unwrap()
         .value_type().unwrap(), OptionType::Int64Type);
-    assert_eq!(cfg.value("section1.long_integer_value").unwrap() 
+    assert_eq!(cfg.value("section1.long_integer_value").unwrap()
         .as_int64().unwrap(), 99991);
      
-    assert_eq!(cfg.value("section1.float_value").unwrap() 
+    assert_eq!(cfg.value("section1.float_value").unwrap()
         .value_type().unwrap(), OptionType::FloatType);
-    assert_delta!(cfg.value("section1.float_value").unwrap() 
+    assert_delta!(cfg.value("section1.float_value").unwrap()
         .as_float().unwrap(), 0.99991, 0.00001);
         
-    assert_eq!(cfg.value("section1.string_value").unwrap() 
+    assert_eq!(cfg.value("section1.string_value").unwrap()
         .value_type().unwrap(), OptionType::StringType);
-    assert_eq!(cfg.value("section1.string_value").unwrap() 
+    assert_eq!(cfg.value("section1.string_value").unwrap()
         .as_string().unwrap(), "test string");
 }
 
@@ -87,8 +88,18 @@ fn test_create_section() {
     let mut _val = group.write_integer("test", 123);
     
     assert_eq!(cfg.save_to_file(Path::new("test.cfg")).is_ok(), true);
+    assert_eq!(Path::new("test.cfg").exists(), true);
     
+    assert_eq!(cfg.load_from_file(Path::new("test.cfg")).is_ok(), true);
     assert_eq!(cfg.value("root_section").is_some(), true);
-    assert_eq!(cfg.value("root_section").unwrap().is_root().unwrap(), true);
     assert_eq!(cfg.value("root_section").unwrap().is_section().unwrap(), true);
+    assert_eq!(cfg.value("root_section.group").is_some(), true);
+    assert_eq!(cfg.value("root_section.group").unwrap().is_root().unwrap(), 
+        false);
+    assert_eq!(cfg.value("root_section.group").unwrap().is_section().unwrap(), 
+        true);
+    assert_eq!(cfg.value("root_section.group.test").unwrap()
+        .as_integer().unwrap(), 123);
+
+    assert_eq!(fs::remove_file(Path::new("test.cfg")).is_ok(), true);
 }

@@ -33,13 +33,13 @@ use libconfig_sys as raw;
 use std::{mem::MaybeUninit, path};
 use std::ffi::{CStr, CString};
 
-// Configuration file
+/// Configuration file.
 pub struct Config {
     config : raw::config_t,
     root_element : Option<*mut raw::config_setting_t>
 }
 
-// Option value type
+/// Option value type.
 #[derive(Debug, PartialEq)]
 pub enum OptionType {
     IntegerType,
@@ -49,18 +49,18 @@ pub enum OptionType {
     BooleanType
 }
 
-// Writer for configuration option
+/// Writer for configuration option.
 #[derive(Clone, Copy)]
 pub struct OptionWriter {
     element : Option<*mut raw::config_setting_t>
 }
 
-// Reader for configuration option
+/// Reader for configuration option.
 pub struct OptionReader {
     element : Option<*mut raw::config_setting_t>
 }
 
-// Errors
+/// Config errors codes.
 #[derive(Debug, PartialEq)]
 pub enum Errors {
     ParseError,
@@ -68,12 +68,20 @@ pub enum Errors {
     SaveError
 }
 
-// Result type
+/// Config result type.
 type Result<T> = std::result::Result<T, Errors>;
 
 impl Config {
     
-    // Constructor
+    /// Constructor.
+    /// Create new Config struct.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// ```
     pub fn new() -> Config {
         let mut c = MaybeUninit::<raw::config_t>::uninit();
         let cfg = unsafe {
@@ -96,7 +104,18 @@ impl Config {
         }
     }
     
-    // Load config file from file and parse it
+    /// Load config file from file and parse it.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// use std::path::Path;
+    /// 
+    /// let mut cfg = Config::new();
+    /// if cfg.load_from_file(Path::new("test.cfg")).is_ok() {
+    ///     // ...
+    /// }
+    /// ```
     pub fn load_from_file(&mut self, file_name : &path::Path) -> Result<()> {
         if file_name.exists() {
             unsafe {
@@ -120,7 +139,17 @@ impl Config {
         }
     }
     
-    // Parse configuration from string
+    /// Parse configuration from string.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let mut cfg = Config::new();
+    /// if cfg.load_from_string("root { value = 1 }").is_ok() {
+    ///     // ...
+    /// }
+    /// ```
     pub fn load_from_string<S>(&mut self, config_string : S) -> Result<()>
         where S: Into<String> {
           
@@ -146,7 +175,20 @@ impl Config {
         }
     }
    
-   // Save current config to file
+   /// Save current config to file.
+   /// 
+   /// # Example
+   /// ```
+   /// use libconfig::config::Config;
+   /// use std::path::Path;
+   /// use std::fs;
+   /// 
+   /// let mut cfg = Config::new();
+   /// if cfg.save_to_file(Path::new("test.cfg")).is_ok() {
+   ///      // ...
+   /// }
+   /// fs::remove_file(Path::new("test.cfg"));
+   /// ```
     pub fn save_to_file(&mut self, file_name : &path::Path) -> Result<()> {
         let result = unsafe { raw::config_write_file(&mut self.config, 
             CString::new(file_name.as_os_str().to_str().unwrap())
@@ -160,7 +202,16 @@ impl Config {
         }
     }
     
-    // Set current config include directory
+    /// Set current config include directory.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// use std::path::Path;
+    /// 
+    /// let mut cfg = Config::new();
+    /// cfg.include_dir(Path::new("/config"));
+    /// ```
     pub fn include_dir(&mut self, path : &path::Path) -> () {
         unsafe {
             raw::config_set_include_dir(&mut self.config, 
@@ -169,7 +220,17 @@ impl Config {
         }
     }
         
-    // Read value from path
+    /// Read value from path.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// if cfg.value("root.value").is_some() {
+    ///     let val = cfg.value("root.value").unwrap();
+    /// }
+    /// ```
     pub fn value<S>(&self, path : S) -> Option<OptionReader>
         where S: Into<String> {
         
@@ -180,7 +241,15 @@ impl Config {
         }
     }
     
-    // Create new group section
+    /// Create new group section.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let root = cfg.create_section("root").unwrap();
+    /// ```
     pub fn create_section<S>(&self, path : S) -> Option<OptionWriter>
         where S: Into<String> {
         
@@ -192,7 +261,8 @@ impl Config {
     }
 }
 
-// Destructor
+/// Destructor.
+/// Clear config and delete all allocated memory data.
 impl Drop for Config {
     fn drop (&mut self) {
         unsafe { 
@@ -203,14 +273,22 @@ impl Drop for Config {
 
 impl OptionWriter {
     
-    // Constructor
+    // Constructor.
     fn new(elem : Option<*mut raw::config_setting_t>) -> OptionWriter {
         OptionWriter {
             element : elem
         }
     }
     
-    // Create new group section
+    /// Create new group section.
+    /// 
+    /// # Examples
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let section = cfg.create_section("root.group").unwrap();
+    /// ```
     pub fn create_section<S>(&self, path : S) -> Option<OptionWriter> 
         where S: Into<String> {
             
@@ -231,7 +309,16 @@ impl OptionWriter {
         }
     }
     
-    // Add new integer value to current group
+    /// Add new integer value to current group.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let group = cfg.create_section("section").unwrap();
+    /// group.write_integer("ival", 321);
+    /// ```
     pub fn write_integer<S>(&self, name : S, value : i32) -> 
         Option<OptionWriter> where S: Into<String> {
             
@@ -270,7 +357,17 @@ impl OptionReader {
         }
     }
     
-    // Return true if element is root
+    /// Return true if element is root.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// if cfg.value("root").unwrap().is_root().unwrap() {
+    ///     // ...
+    /// }
+    /// ```
     pub fn is_root(&self) -> Option<bool> {
         if self.element.is_none() {
             return None;
@@ -280,8 +377,18 @@ impl OptionReader {
             unsafe {&*self.element.unwrap()} );
         Some(result == raw::CONFIG_TRUE)
     }
-     
-    // Return true if element is section group
+    
+    /// Return true if element is section group.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// if cfg.value("root").unwrap().is_section().unwrap() {
+    ///     // ...
+    /// }
+    /// ``` 
     pub fn is_section(&self) -> Option<bool> {
         if self.element.is_none() {
             return None;
@@ -292,7 +399,17 @@ impl OptionReader {
         Some(result == raw::CONFIG_TRUE)      
     }
     
-    // Return true if element is array
+    /// Return true if element is array.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// if cfg.value("root.value").unwrap().is_array().unwrap() {
+    ///     // ...
+    /// }
+    /// ```
     pub fn is_array(&self) -> Option<bool> {
         if self.element.is_none() {
             return None
@@ -303,7 +420,17 @@ impl OptionReader {
         Some(result == raw::CONFIG_TRUE)
     }
     
-    // Return true if element is list
+    /// Return true if element is list.
+    ///
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// if cfg.value("root.value").unwrap().is_list().unwrap() {
+    ///     // ...
+    /// }
+    /// ```
     pub fn is_list(&self) -> Option<bool> {
         if self.element.is_none() {
             return None
@@ -314,7 +441,15 @@ impl OptionReader {
         Some(result == raw::CONFIG_TRUE)
     }
     
-    // Return option element parent item
+    /// Return option element parent item.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let parent = cfg.value("root.section").unwrap().parent().unwrap();
+    /// ```
     pub fn parent(&self) -> Option<OptionReader> {
         if self.element.is_none() {
             return None
@@ -330,7 +465,21 @@ impl OptionReader {
         }
     }
     
-    // Return option value type
+    /// Return option value type.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::{Config, OptionType};
+    /// 
+    /// let cfg = Config::new();
+    /// match cfg.value("root.value").unwrap().value_type().unwrap() {
+    ///     OptionType::IntegerType => { /* ... */ },
+    ///     OptionType::Int64Type => { /* ... */ },
+    ///     OptionType::FloatType => { /* ... */ },
+    ///     OptionType::StringType => { /* ... */ },
+    ///     OptionType::BooleanType => { /* ... */ }
+    /// }
+    /// ```
     pub fn value_type(&self) -> Option<OptionType> {
         if self.element.is_none() {
             return None
@@ -348,7 +497,15 @@ impl OptionReader {
         }
     }
     
-    // Read value from path
+    /// Read value from path.
+    ///
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let root = cfg.value("root").unwrap(); 
+    /// ``` 
     pub fn value<S>(&self, path : S) -> Option<OptionReader>
         where S: Into<String> {
         
@@ -368,7 +525,15 @@ impl OptionReader {
         }  
     }
     
-    // Present option value as i32
+    /// Present option value as i32.
+    ///
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let ival = cfg.value("root.value").unwrap().as_integer().unwrap();
+    /// ```
     pub fn as_integer(&self) -> Option<i32> {
         if self.element.is_none() {
             return None
@@ -380,7 +545,15 @@ impl OptionReader {
         Some(result)
     }
     
-    // Present option value as i32, return def if value not found
+    /// Present option value as i32, return def if value not found.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let ival = cfg.value("root.value").unwrap().as_integer_default(0);
+    /// ```
     pub fn as_integer_default (&self, def : i32) -> i32 {
         match self.as_integer() {
             Some(x) => { x },
@@ -388,7 +561,15 @@ impl OptionReader {
         }
     }
     
-    // Present option value as i64
+    /// Present option value as i64.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let value = cfg.value("root.value").unwrap().as_int64().unwrap();
+    /// ```
     pub fn as_int64(&self) -> Option<i64> {
         if self.element.is_none() {
             return None
@@ -400,7 +581,15 @@ impl OptionReader {
         Some(result)
     }
     
-    // Present option value as i64, return def if value not exists
+    /// Present option value as i64, return def if value not exists.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let value = cfg.value("root.value").unwrap().as_int64_default(0);
+    /// ```
     pub fn as_int64_default(&self, def : i64) -> i64 {
         match self.as_int64() {
             Some(x) => { x },
@@ -408,7 +597,15 @@ impl OptionReader {
         }
     }
     
-    // Present option value as f64
+    /// Present option value as f64.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let value = cfg.value("root.value").unwrap().as_float().unwrap();
+    /// ```
     pub fn as_float(&self) -> Option<f64> {
         if self.element.is_none() {
             return None
@@ -420,7 +617,15 @@ impl OptionReader {
         Some(result)
     }
     
-    // Present option value as f64, return def if value not exists
+    /// Present option value as f64, return def if value not exists.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let value = cfg.value("root.value").unwrap().as_float_default(0.0);
+    /// ```
     pub fn as_float_default(&self, def : f64) -> f64 {
         match self.as_float() {
             Some(x) => { x },
@@ -428,7 +633,15 @@ impl OptionReader {
         }
     }
     
-    // Present option value as bool
+    /// Present option value as bool.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let value = cfg.value("root.value").unwrap().as_bool().unwrap();
+    /// ```
     pub fn as_bool(&self) -> Option<bool> {
         if self.element.is_none() {
             return None
@@ -440,7 +653,15 @@ impl OptionReader {
         Some(result == raw::CONFIG_TRUE)
     }
     
-    // Present option value as bool, return def if value not exists
+    /// Present option value as bool, return def if value not exists.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let value = cfg.value("root.value").unwrap().as_bool_default(false);
+    /// ```
     pub fn as_bool_default(&self, def : bool) -> bool {
         match self.as_bool() {
             Some(x) => { x },
@@ -448,7 +669,15 @@ impl OptionReader {
         }
     }
     
-    // Present option value as string
+    /// Present option value as string.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let value = cfg.value("root.value").unwrap().as_string().unwrap();
+    /// ```
     pub fn as_string(&self) -> Option<String> {
         if self.element.is_none() {
             return None
@@ -461,11 +690,21 @@ impl OptionReader {
         Some(result.to_str().unwrap().to_string())
     }
     
-    // Present option value as string, return def if value not exists
-    pub fn as_string_default(&self, def : String) -> String {
+    /// Present option value as string, return def if value not exists.
+    /// 
+    /// # Example
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let value = cfg.value("root.value").unwrap()
+    ///     .as_string_default("default");
+    /// ```
+    pub fn as_string_default<S>(&self, def : S) -> String
+        where S: Into<String> {
         match self.as_string() {
             Some(x) => { x },
-            None => { def } 
+            None => { def.into() } 
         }
     }
 }
