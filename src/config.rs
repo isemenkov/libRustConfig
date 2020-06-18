@@ -36,8 +36,7 @@ use std::ffi::{CStr, CString};
 // Configuration file
 pub struct Config {
     config : raw::config_t,
-    root_element : Option<raw::config_setting_t>,
-    dbg : Option<*mut raw::config_setting_t>
+    root_element : Option<*mut raw::config_setting_t>
 }
 
 // Option value type
@@ -53,12 +52,12 @@ pub enum OptionType {
 // Writer for configuration option
 #[derive(Clone, Copy)]
 pub struct OptionWriter {
-    element : Option<raw::config_setting_t>
+    element : Option<*mut raw::config_setting_t>
 }
 
 // Reader for configuration option
 pub struct OptionReader {
-    element : Option<raw::config_setting_t>
+    element : Option<*mut raw::config_setting_t>
 }
 
 // Errors
@@ -87,14 +86,13 @@ impl Config {
             if option.is_null() {
                 None
             } else {
-                Some(unsafe {*option})
+                Some(option)
             }
         };
     
         Config {
             config : cfg,
-            root_element : element,
-            dbg : Some(option)
+            root_element : element
         }
     }
     
@@ -110,7 +108,7 @@ impl Config {
                 
                 if result == raw::CONFIG_TRUE {
                     self.root_element = 
-                        Some(*raw::config_root_setting(&self.config));
+                        Some(raw::config_root_setting(&self.config));
                     Ok(())
                 } else {
                     self.root_element = None;
@@ -139,7 +137,7 @@ impl Config {
                 self.root_element = None;
                 Err(Errors::ParseError)
             } else {
-                self.root_element = Some(unsafe {*option});
+                self.root_element = Some(option);
                 Ok(())
             }
         } else {
@@ -189,13 +187,7 @@ impl Config {
         if self.root_element.is_none() {
             None
         } else {
-            let option = unsafe {
-                raw::config_setting_add(self.dbg.unwrap(),
-                    CString::new(path.into()).unwrap().as_ptr(), 
-                    raw::CONFIG_TYPE_GROUP as i32)
-            };
-            //OptionWriter::new(self.root_element).create_section(path)
-            Some(OptionWriter::new(Some(unsafe{*option})))
+            OptionWriter::new(self.root_element).create_section(path)
         }
     }
 }
@@ -212,7 +204,7 @@ impl Drop for Config {
 impl OptionWriter {
     
     // Constructor
-    fn new(elem : Option<raw::config_setting_t>) -> OptionWriter {
+    fn new(elem : Option<*mut raw::config_setting_t>) -> OptionWriter {
         OptionWriter {
             element : elem
         }
@@ -227,7 +219,7 @@ impl OptionWriter {
         }
         
         let option = unsafe {
-            raw::config_setting_add(&mut self.element.unwrap(), 
+            raw::config_setting_add(self.element.unwrap(), 
                 CString::new(path.into()).unwrap().as_ptr(), 
                 raw::CONFIG_TYPE_GROUP as i32)
         };
@@ -235,7 +227,7 @@ impl OptionWriter {
         if option.is_null() {
             None
         } else {
-            Some(OptionWriter::new(Some(unsafe {*option})))
+            Some(OptionWriter::new(Some(option)))
         }
     }
     
@@ -248,7 +240,7 @@ impl OptionWriter {
         };
         
         let option = unsafe {
-            raw::config_setting_add(&mut self.element.unwrap(),
+            raw::config_setting_add(self.element.unwrap(),
                 CString::new(name.into()).unwrap().as_ptr(),
                 raw::CONFIG_TYPE_INT as i32)
         };
@@ -272,7 +264,7 @@ impl OptionWriter {
 impl OptionReader {
     
     // Constructor
-    fn new(elem : Option<raw::config_setting_t>) -> OptionReader {
+    fn new(elem : Option<*mut raw::config_setting_t>) -> OptionReader {
         OptionReader {
             element : elem
         }
@@ -284,7 +276,8 @@ impl OptionReader {
             return None;
         }
         
-        let result = raw::config_setting_is_root(&self.element.unwrap());
+        let result = raw::config_setting_is_root(
+            unsafe {&*self.element.unwrap()} );
         Some(result == raw::CONFIG_TRUE)
     }
      
@@ -294,7 +287,8 @@ impl OptionReader {
             return None;
         }
         
-        let result = raw::config_setting_is_group(&self.element.unwrap());
+        let result = raw::config_setting_is_group(
+            unsafe {&*self.element.unwrap()} );
         Some(result == raw::CONFIG_TRUE)      
     }
     
@@ -304,7 +298,8 @@ impl OptionReader {
             return None
         }
         
-        let result = raw::config_setting_is_array(&self.element.unwrap());
+        let result = raw::config_setting_is_array(
+            unsafe {&*self.element.unwrap()} );
         Some(result == raw::CONFIG_TRUE)
     }
     
@@ -314,7 +309,8 @@ impl OptionReader {
             return None
         }
         
-        let result = raw::config_setting_is_list(&self.element.unwrap());
+        let result = raw::config_setting_is_list(
+            unsafe {&*self.element.unwrap()} );
         Some(result == raw::CONFIG_TRUE)
     }
     
@@ -324,12 +320,13 @@ impl OptionReader {
             return None
         }
         
-        let result = raw::config_setting_parent(&self.element.unwrap());
+        let result = raw::config_setting_parent(
+            unsafe {&*self.element.unwrap()} );
         
         if result.is_null() {
             None
         } else {
-            Some(OptionReader::new(Some(unsafe {*result})))
+            Some(OptionReader::new(Some(result)))
         }
     }
     
@@ -339,7 +336,8 @@ impl OptionReader {
             return None
         }
         
-        let result = raw::config_setting_type(&self.element.unwrap());
+        let result = raw::config_setting_type(
+            unsafe {&*self.element.unwrap()} );
         match result as i16 {
             raw::CONFIG_TYPE_INT => { Some(OptionType::IntegerType) },
             raw::CONFIG_TYPE_INT64 => { Some(OptionType::Int64Type) },
@@ -359,14 +357,14 @@ impl OptionReader {
         }
         
         let option = unsafe { raw::config_setting_lookup(
-            &mut self.element.unwrap(), CString::new(path.into())
+            self.element.unwrap(), CString::new(path.into())
                 .unwrap().as_ptr())
         };
          
         if option.is_null() {
             None          
         } else {
-            Some(OptionReader::new(Some(unsafe {*option})))
+            Some(OptionReader::new(Some(option)))
         }  
     }
     
@@ -377,7 +375,7 @@ impl OptionReader {
         }
         
         let result = unsafe { 
-            raw::config_setting_get_int(&mut self.element.unwrap()) 
+            raw::config_setting_get_int(self.element.unwrap()) 
         };
         Some(result)
     }
@@ -397,7 +395,7 @@ impl OptionReader {
         }
         
         let result = unsafe {
-            raw::config_setting_get_int64(&mut self.element.unwrap())
+            raw::config_setting_get_int64(self.element.unwrap())
         };
         Some(result)
     }
@@ -417,7 +415,7 @@ impl OptionReader {
         }
         
         let result = unsafe {
-            raw::config_setting_get_float(&mut self.element.unwrap())
+            raw::config_setting_get_float(self.element.unwrap())
         };
         Some(result)
     }
@@ -437,7 +435,7 @@ impl OptionReader {
         }
         
         let result = unsafe {
-            raw::config_setting_get_bool(&mut self.element.unwrap())
+            raw::config_setting_get_bool(self.element.unwrap())
         };
         Some(result == raw::CONFIG_TRUE)
     }
@@ -458,7 +456,7 @@ impl OptionReader {
         
         let result = unsafe {
             CStr::from_ptr(raw::config_setting_get_string(
-                &mut self.element.unwrap()))
+                self.element.unwrap()))
         };
         Some(result.to_str().unwrap().to_string())
     }
