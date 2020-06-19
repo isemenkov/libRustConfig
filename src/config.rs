@@ -227,8 +227,9 @@ impl Config {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// if cfg.value("root.value").is_some() {
-    ///     let val = cfg.value("root.value").unwrap();
+    /// match cfg.value("root.value") {
+    ///     Some(val) => { /* ... */ },
+    ///     None => { /* ... */ }
     /// }
     /// ```
     pub fn value<S>(&self, path : S) -> Option<OptionReader>
@@ -248,7 +249,10 @@ impl Config {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let root = cfg.create_section("root").unwrap();
+    /// match cfg.create_section("root") {
+    ///     Some(s) => { /* ... */ },
+    ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn create_section<S>(&self, path : S) -> Option<OptionWriter>
         where S: Into<String> {
@@ -287,7 +291,10 @@ impl OptionWriter {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let section = cfg.create_section("root.group").unwrap();
+    /// match cfg.create_section("root.group") {
+    ///     Some(s) => { /* ... */ },
+    ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn create_section<S>(&self, path : S) -> Option<OptionWriter> 
         where S: Into<String> {
@@ -316,10 +323,13 @@ impl OptionWriter {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let group = cfg.create_section("section").unwrap();
-    /// group.write_integer("ival", 321);
+    /// match cfg.create_section("section") {
+    ///     Some(s) => { 
+    ///         s.write_int32("ival", 321); 
+    ///     },
+    ///     None => { /* ... */ }
     /// ```
-    pub fn write_integer<S>(&self, name : S, value : i32) -> 
+    pub fn write_int32<S>(&self, name : S, value : i32) -> 
         Option<OptionWriter> where S: Into<String> {
             
         if self.element.is_none() {
@@ -337,6 +347,177 @@ impl OptionWriter {
         } else {
             let result = unsafe {
                 raw::config_setting_set_int(option, value)  
+            };
+            
+            if result == raw::CONFIG_TRUE {
+                Some(*self)
+            } else {
+                None
+            }
+        }
+    }
+
+    /// Add new int64 value to current group.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// match cfg.create_section("section") {
+    ///     Some(s) => { 
+    ///         s.write_int64("ival", 321000); 
+    ///     },
+    ///     None => { /* ... */ }
+    /// ```
+    pub fn write_int64<S>(&self, name : S, value : i64) -> 
+        Option<OptionWriter> where S: Into<String> {
+            
+        if self.element.is_none() {
+            return None
+        };
+        
+        let option = unsafe {
+            raw::config_setting_add(self.element.unwrap(),
+                CString::new(name.into()).unwrap().as_ptr(),
+                raw::CONFIG_TYPE_INT64 as i32)
+        };
+        
+        if option.is_null() {
+            None
+        } else {
+            let result = unsafe {
+                raw::config_setting_set_int64(option, value)  
+            };
+            
+            if result == raw::CONFIG_TRUE {
+                Some(*self)
+            } else {
+                None
+            }
+        }
+    }
+
+    /// Add new float value to current group.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// match cfg.create_section("section") {
+    ///     Some(s) => { 
+    ///         s.write_float64("ival", 321.001); 
+    ///     },
+    ///     None => { /* ... */ }
+    /// ```
+    pub fn write_float64<S>(&self, name : S, value : f64) -> 
+        Option<OptionWriter> where S: Into<String> {
+            
+        if self.element.is_none() {
+            return None
+        };
+        
+        let option = unsafe {
+            raw::config_setting_add(self.element.unwrap(),
+                CString::new(name.into()).unwrap().as_ptr(),
+                raw::CONFIG_TYPE_FLOAT as i32)
+        };
+        
+        if option.is_null() {
+            None
+        } else {
+            let result = unsafe {
+                raw::config_setting_set_float(option, value)  
+            };
+            
+            if result == raw::CONFIG_TRUE {
+                Some(*self)
+            } else {
+                None
+            }
+        }
+    }
+
+    /// Add new boolean value to current group.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// match cfg.create_section("section") {
+    ///     Some(s) => { 
+    ///         s.write_bool("ival", false); 
+    ///     },
+    ///     None => { /* ... */ }
+    /// ```
+    pub fn write_bool<S>(&self, name : S, value : bool) -> 
+        Option<OptionWriter> where S: Into<String> {
+            
+        if self.element.is_none() {
+            return None
+        };
+        
+        let option = unsafe {
+            raw::config_setting_add(self.element.unwrap(),
+                CString::new(name.into()).unwrap().as_ptr(),
+                raw::CONFIG_TYPE_BOOL as i32)
+        };
+        
+        if option.is_null() {
+            None
+        } else {
+            let val = {
+                match value {
+                    true => { raw::CONFIG_TRUE },
+                    false => { raw::CONFIG_FALSE }
+                }
+            };
+            let result = unsafe {
+                raw::config_setting_set_bool(option, val)  
+            };
+            
+            if result == raw::CONFIG_TRUE {
+                Some(*self)
+            } else {
+                None
+            }
+        }
+    }
+
+    /// Add new string value to current group.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// match cfg.create_section("section") {
+    ///     Some(s) => { 
+    ///         s.write_string("ival", "test string"); 
+    ///     },
+    ///     None => { /* ... */ }
+    /// ```
+    pub fn write_string<S>(&self, name : S, value : S) -> 
+        Option<OptionWriter> where S: Into<String> {
+            
+        if self.element.is_none() {
+            return None
+        };
+        
+        let option = unsafe {
+            raw::config_setting_add(self.element.unwrap(),
+                CString::new(name.into()).unwrap().as_ptr(),
+                raw::CONFIG_TYPE_FLOAT as i32)
+        };
+        
+        if option.is_null() {
+            None
+        } else {
+            let result = unsafe {
+                raw::config_setting_set_string(option, 
+                    CString::new(value.into()).unwrap().as_ptr())  
             };
             
             if result == raw::CONFIG_TRUE {
@@ -448,7 +629,10 @@ impl OptionReader {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let parent = cfg.value("root.section").unwrap().parent().unwrap();
+    /// match cfg.value("root.section").unwrap().parent() {
+    ///     Some(val) => { /* ... */ },
+    ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn parent(&self) -> Option<OptionReader> {
         if self.element.is_none() {
@@ -504,7 +688,10 @@ impl OptionReader {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let root = cfg.value("root").unwrap(); 
+    /// match cfg.value("root") {
+    ///     Some(val) => { /* ... */ },
+    ///     None => { /* ... */ }
+    /// } 
     /// ``` 
     pub fn value<S>(&self, path : S) -> Option<OptionReader>
         where S: Into<String> {
@@ -532,9 +719,9 @@ impl OptionReader {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let ival = cfg.value("root.value").unwrap().as_integer().unwrap();
+    /// let ival = cfg.value("root.value").unwrap().as_int32().unwrap();
     /// ```
-    pub fn as_integer(&self) -> Option<i32> {
+    pub fn as_int32(&self) -> Option<i32> {
         if self.element.is_none() {
             return None
         }
@@ -552,10 +739,10 @@ impl OptionReader {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let ival = cfg.value("root.value").unwrap().as_integer_default(0);
+    /// let ival = cfg.value("root.value").unwrap().as_int32_default(0);
     /// ```
-    pub fn as_integer_default (&self, def : i32) -> i32 {
-        match self.as_integer() {
+    pub fn as_int32_default (&self, def : i32) -> i32 {
+        match self.as_int32() {
             Some(x) => { x },
             None => { def }
         }
@@ -604,9 +791,9 @@ impl OptionReader {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let value = cfg.value("root.value").unwrap().as_float().unwrap();
+    /// let value = cfg.value("root.value").unwrap().as_float64().unwrap();
     /// ```
-    pub fn as_float(&self) -> Option<f64> {
+    pub fn as_float64(&self) -> Option<f64> {
         if self.element.is_none() {
             return None
         }
@@ -624,10 +811,10 @@ impl OptionReader {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let value = cfg.value("root.value").unwrap().as_float_default(0.0);
+    /// let value = cfg.value("root.value").unwrap().as_float64_default(0.0);
     /// ```
     pub fn as_float_default(&self, def : f64) -> f64 {
-        match self.as_float() {
+        match self.as_float64() {
             Some(x) => { x },
             None => { def }
         }
