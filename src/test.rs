@@ -51,7 +51,6 @@ fn test_parse_config_string() {
         };"
     ).is_ok(), true);
     
-    assert!(cfg.value("section1").unwrap().is_root().unwrap());
     assert!(cfg.value("section1").unwrap().is_section().unwrap());
     
     assert_eq!(cfg.value("section1.integer_value").unwrap()
@@ -98,8 +97,6 @@ fn test_create_section() {
     assert_eq!(cfg.value("root_section").is_some(), true);
     assert_eq!(cfg.value("root_section").unwrap().is_section().unwrap(), true);
     assert_eq!(cfg.value("root_section.group").is_some(), true);
-    assert_eq!(cfg.value("root_section.group").unwrap().is_root().unwrap(), 
-        false);
     assert_eq!(cfg.value("root_section.group").unwrap().is_section().unwrap(), 
         true);
     assert_eq!(cfg.value("root_section.group.test").unwrap()
@@ -131,6 +128,8 @@ fn test_delete_element() {
     
     assert_eq!(cfg.value("root_section.group.some_value").unwrap()
         .delete().is_ok(), true);
-    assert_eq!(group.delete().is_ok(), true);
+    assert_eq!(cfg.value("root_section.group.some_value").is_none(), true);
+
+    assert_eq!(cfg.value("root_section.group").unwrap().delete().is_ok(), true);
     assert_eq!(cfg.value("root_section.group").is_none(), true);
 }

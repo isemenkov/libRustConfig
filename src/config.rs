@@ -121,8 +121,7 @@ impl Config {
     pub fn load_from_file(&mut self, file_name : &path::Path) -> Result<()> {
         if file_name.exists() {
             unsafe {
-                let result = raw::config_read_file(
-                    &mut self.config, 
+                let result = raw::config_read_file(&mut self.config, 
                     CString::new(file_name.as_os_str().to_str().unwrap())
                         .unwrap().as_ptr()
                 );
@@ -156,8 +155,7 @@ impl Config {
         where S: Into<String> {
           
         let result = unsafe { 
-            raw::config_read_string(
-                &mut self.config, 
+            raw::config_read_string(&mut self.config, 
                 CString::new(config_string.into()).unwrap().as_ptr())
         };
         
@@ -236,12 +234,7 @@ impl Config {
     /// ```
     pub fn value<S>(&self, path : S) -> Option<OptionReader>
         where S: Into<String> {
-        
-        if self.root_element.is_none() {
-            return None
-        } else {
-            OptionReader::new(self.root_element).value(path)
-        }
+        OptionReader::new(self.root_element).value(path)
     }
     
     /// Create new group section.
@@ -258,12 +251,7 @@ impl Config {
     /// ```
     pub fn create_section<S>(&self, path : S) -> Option<OptionWriter>
         where S: Into<String> {
-        
-        if self.root_element.is_none() {
-            None
-        } else {
-            OptionWriter::new(self.root_element).create_section(path)
-        }
+        OptionWriter::new(self.root_element).create_section(path)
     }
 }
 
@@ -293,9 +281,20 @@ impl OptionWriter {
         }
 
         if OptionReader::new(self.element).is_section().unwrap() {
-            let result = unsafe {
-                raw::config_setting_remove(self.element.unwrap(), 
-                    raw::config_setting_name(&*self.element.unwrap()))
+            let result = {
+                let name = raw::config_setting_name(self.element.unwrap());
+                
+                if name.is_null() {
+                    return Err(Errors::DeleteError);
+                }
+
+                let parent = OptionReader::new(self.element).parent();
+                if parent.is_none() {
+                    return Err(Errors::DeleteError);
+                }
+
+                unsafe { raw::config_setting_remove(parent.unwrap()
+                    .element.unwrap(), name) }
             };
 
             match result {
@@ -303,19 +302,26 @@ impl OptionWriter {
                 _ => { Err(Errors::DeleteError) }
             }
         } else {
-            let result = unsafe {
-                raw::config_setting_remove_elem(
-                    raw::config_setting_parent(&*self.element.unwrap()),
-                    raw::config_setting_index(self.element.unwrap()) as u32)
+            let result = {
+                let parent = OptionReader::new(self.element).parent();
+                let index = unsafe { 
+                    raw::config_setting_index(self.element.unwrap())
+                };
+
+                if parent.is_none() {
+                    return Err(Errors::DeleteError);
+                }
+
+                unsafe { raw::config_setting_remove_elem(parent.unwrap()
+                    .element.unwrap(), index as u32) }
             };
 
             match result {
                 raw::CONFIG_TRUE => { Ok(()) },
                 _ => { Err(Errors::DeleteError) }
-            } 
+            }
         }
     }
-
 
     /// Create new group section.
     /// 
@@ -639,27 +645,6 @@ impl OptionReader {
     pub fn delete(&self) -> Result<()> {
         OptionWriter::new(self.element).delete()
     }
-
-    /// Return true if element is root.
-    /// 
-    /// # Example
-    /// ```ignore
-    /// use libconfig::config::Config;
-    /// 
-    /// let cfg = Config::new();
-    /// if cfg.value("root").unwrap().is_root().unwrap() {
-    ///     // ...
-    /// }
-    /// ```
-    pub fn is_root(&self) -> Option<bool> {
-        if self.element.is_none() {
-            return None;
-        }
-        
-        let result = raw::config_setting_is_root(
-            unsafe {&*self.element.unwrap()} );
-        Some(result == raw::CONFIG_TRUE)
-    }
     
     /// Return true if element is section group.
     /// 
@@ -677,8 +662,7 @@ impl OptionReader {
             return None;
         }
         
-        let result = raw::config_setting_is_group(
-            unsafe {&*self.element.unwrap()} );
+        let result = raw::config_setting_is_group(self.element.unwrap());
         Some(result == raw::CONFIG_TRUE)      
     }
     
@@ -698,8 +682,7 @@ impl OptionReader {
             return None
         }
         
-        let result = raw::config_setting_is_array(
-            unsafe {&*self.element.unwrap()} );
+        let result = raw::config_setting_is_array(self.element.unwrap());
         Some(result == raw::CONFIG_TRUE)
     }
     
@@ -719,8 +702,7 @@ impl OptionReader {
             return None
         }
         
-        let result = raw::config_setting_is_list(
-            unsafe {&*self.element.unwrap()} );
+        let result = raw::config_setting_is_list(self.element.unwrap());
         Some(result == raw::CONFIG_TRUE)
     }
     
@@ -741,8 +723,7 @@ impl OptionReader {
             return None
         }
         
-        let result = raw::config_setting_parent(
-            unsafe {&*self.element.unwrap()} );
+        let result = raw::config_setting_parent(self.element.unwrap());
         
         if result.is_null() {
             None
@@ -771,8 +752,7 @@ impl OptionReader {
             return None
         }
         
-        let result = raw::config_setting_type(
-            unsafe {&*self.element.unwrap()} );
+        let result = raw::config_setting_type(self.element.unwrap());
         match result as i16 {
             raw::CONFIG_TYPE_INT => { Some(OptionType::IntegerType) },
             raw::CONFIG_TYPE_INT64 => { Some(OptionType::Int64Type) },
