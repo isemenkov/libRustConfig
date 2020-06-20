@@ -55,6 +55,12 @@ pub struct OptionWriter {
     element : Option<*mut raw::config_setting_t>
 }
 
+/// Writer for collection (array, list) option.
+#[derive(Clone, Copy)]
+pub struct CollectionWriter {
+    element : Option<*mut raw::config_setting_t>
+}
+
 /// Reader for configuration option.
 pub struct OptionReader {
     element : Option<*mut raw::config_setting_t>
@@ -275,6 +281,21 @@ impl OptionWriter {
     }
     
     /// Delete current config element.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// match cfg.create_section("group") {
+    ///     Some(group) => {
+    ///         /* ... */
+    ///         if !group.delete().is_ok() {
+    ///             /* ... */
+    ///         }
+    ///     },
+    ///     None => { /* ... */ }
+    /// }
     pub fn delete(&self) -> Result<()> {
         if self.element.is_none() {
             return Err(Errors::ElementNotExists)
@@ -326,7 +347,7 @@ impl OptionWriter {
     /// Create new group section.
     /// 
     /// # Examples
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
@@ -358,16 +379,17 @@ impl OptionWriter {
     /// Create new array group section.
     /// 
     /// # Examples
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// match cfg.create_array("root.array") {
+    /// let group = cfg.create_section("group").unwrap();
+    /// match group.create_array("array") {
     ///     Some(s) => { /* ... */ },
     ///     None => { /* ... */ }
     /// }
     /// ```
-    pub fn create_array<S>(&self, path : S) -> Option<OptionWriter> 
+    pub fn create_array<S>(&self, path : S) -> Option<CollectionWriter> 
         where S: Into<String> {
             
         if self.element.is_none() {
@@ -383,23 +405,24 @@ impl OptionWriter {
         if option.is_null() {
             None
         } else {
-            Some(OptionWriter::new(Some(option)))
+            Some(CollectionWriter::new(Some(option)))
         }
     }
 
     /// Create new list group section.
     /// 
     /// # Examples
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// match cfg.create_list("root.list") {
+    /// let group = cfg.create_section("group").unwrap();
+    /// match group.create_list("root.list") {
     ///     Some(s) => { /* ... */ },
     ///     None => { /* ... */ }
     /// }
     /// ```
-    pub fn create_list<S>(&self, path : S) -> Option<OptionWriter> 
+    pub fn create_list<S>(&self, path : S) -> Option<CollectionWriter> 
         where S: Into<String> {
             
         if self.element.is_none() {
@@ -415,7 +438,7 @@ impl OptionWriter {
         if option.is_null() {
             None
         } else {
-            Some(OptionWriter::new(Some(option)))
+            Some(CollectionWriter::new(Some(option)))
         }
     }
 
@@ -431,6 +454,7 @@ impl OptionWriter {
     ///         s.write_int32("ival", 321); 
     ///     },
     ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn write_int32<S>(&self, name : S, value : i32) -> 
         Option<OptionWriter> where S: Into<String> {
@@ -472,6 +496,7 @@ impl OptionWriter {
     ///         s.write_int64("ival", 321000); 
     ///     },
     ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn write_int64<S>(&self, name : S, value : i64) -> 
         Option<OptionWriter> where S: Into<String> {
@@ -513,6 +538,7 @@ impl OptionWriter {
     ///         s.write_float64("ival", 321.001); 
     ///     },
     ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn write_float64<S>(&self, name : S, value : f64) -> 
         Option<OptionWriter> where S: Into<String> {
@@ -554,6 +580,7 @@ impl OptionWriter {
     ///         s.write_bool("ival", false); 
     ///     },
     ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn write_bool<S>(&self, name : S, value : bool) -> 
         Option<OptionWriter> where S: Into<String> {
@@ -601,6 +628,7 @@ impl OptionWriter {
     ///         s.write_string("ival", "test string"); 
     ///     },
     ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn write_string<S>(&self, name : S, value : S) -> 
         Option<OptionWriter> where S: Into<String> {
@@ -632,6 +660,144 @@ impl OptionWriter {
     }
 }
 
+impl CollectionWriter {
+
+    // Constructor.
+    fn new(elem : Option<*mut raw::config_setting_t>) -> CollectionWriter {
+        CollectionWriter {
+            element : elem
+        }
+    }
+
+    /// Add new integer value to current collection.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let group = cfg.create_section("group").unwrap();
+    /// match group.create_array("int32_collection") {
+    ///     Some(s) => { 
+    ///         s.write_int32(321); 
+    ///         s.write_int32(-12);
+    ///     },
+    ///     None => { /* ... */ }
+    /// }
+    /// ```
+    pub fn write_int32(&self, value : i32) -> Option<CollectionWriter> {
+        let writer = OptionWriter::new(self.element).write_int32("", value);
+
+        if writer.is_none() {
+            return None
+        }
+
+        Some(CollectionWriter::new(Some(writer.unwrap().element.unwrap())))
+    }
+
+    /// Add new int64 value to current collection.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let group = cfg.create_section("group").unwrap();
+    /// match group.create_array("int64_collection") {
+    ///     Some(s) => { 
+    ///         s.write_int64(321000); 
+    ///     },
+    ///     None => { /* ... */ }
+    /// }
+    /// ```
+    pub fn write_int64(&self, value : i64) -> Option<CollectionWriter> {
+        let writer = OptionWriter::new(self.element).write_int64("", value);
+
+        if writer.is_none() {
+            return None
+        }
+
+        Some(CollectionWriter::new(Some(writer.unwrap().element.unwrap())))
+    }
+
+    /// Add new float value to current collection.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let group = cfg.create_section("group").unwrap();
+    /// match group.create_array("float_collection") {
+    ///     Some(s) => { 
+    ///         s.write_float64(321.001); 
+    ///     },
+    ///     None => { /* ... */ }
+    /// }
+    /// ```
+    pub fn write_float64(&self, value : f64) -> Option<CollectionWriter> {
+        let writer = OptionWriter::new(self.element).write_float64("", value);
+
+        if writer.is_none() {
+            return None
+        }
+
+        Some(CollectionWriter::new(Some(writer.unwrap().element.unwrap())))
+    }
+
+    /// Add new boolean value to current collection.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let group = cfg.create_section("group").unwrap();
+    /// match group.create_array("bool_collection") {
+    ///     Some(s) => { 
+    ///         s.write_bool(false); 
+    ///     },
+    ///     None => { /* ... */ }
+    /// }
+    /// ```
+    pub fn write_bool(&self, value : bool) -> Option<CollectionWriter> {
+        let writer = OptionWriter::new(self.element).write_bool("", value);
+
+        if writer.is_none() {
+            return None
+        }
+
+        Some(CollectionWriter::new(Some(writer.unwrap().element.unwrap())))
+    }
+
+    /// Add new string value to current collection.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// let group = cfg.create_section("group").unwrap();
+    /// match group.create_array("str_collection") {
+    ///     Some(s) => { 
+    ///         s.write_string("test string"); 
+    ///     },
+    ///     None => { /* ... */ }
+    /// }
+    /// ```
+    pub fn write_string<S>(&self, value : S) -> Option<CollectionWriter>
+        where S: Into<String> {
+        let writer = OptionWriter::new(self.element).write_string("", 
+            &value.into());
+
+        if writer.is_none() {
+            return None
+        }
+
+        Some(CollectionWriter::new(Some(writer.unwrap().element.unwrap())))
+    }
+}
+
 impl OptionReader {
     
     // Constructor
@@ -642,6 +808,21 @@ impl OptionReader {
     }
 
     /// Delete current config element.
+    /// 
+    /// # Example
+    /// ```
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// match cfg.create_section("group") {
+    ///     Some(group) => {
+    ///         /* ... */
+    ///         if !group.delete().is_ok() {
+    ///             /* ... */
+    ///         }
+    ///     },
+    ///     None => { /* ... */ }
+    /// }
     pub fn delete(&self) -> Result<()> {
         OptionWriter::new(self.element).delete()
     }
@@ -649,12 +830,16 @@ impl OptionReader {
     /// Return true if element is section group.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
+    /// if cfg.create_section("root").is_none() {
+    ///     panic!("Can't create root section!");
+    /// }
+    /// /* ... */
     /// if cfg.value("root").unwrap().is_section().unwrap() {
-    ///     // ...
+    ///     /* ... */
     /// }
     /// ``` 
     pub fn is_section(&self) -> Option<bool> {
@@ -669,12 +854,21 @@ impl OptionReader {
     /// Return true if element is array.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
+    /// let root = cfg.create_section("root");
+    /// if root.is_none() {
+    ///     panic!("Can't create root section!");
+    /// }
+    /// /* ... */
+    /// if root.unwrap().create_array("value").is_none() {
+    ///     panic!("Can't create array!")
+    /// }
+    /// /* ... */
     /// if cfg.value("root.value").unwrap().is_array().unwrap() {
-    ///     // ...
+    ///     /* ... */
     /// }
     /// ```
     pub fn is_array(&self) -> Option<bool> {
@@ -689,11 +883,20 @@ impl OptionReader {
     /// Return true if element is list.
     ///
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// if cfg.value("root.value").unwrap().is_list().unwrap() {
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().create_list("list").is_none() {
+    ///     panic!("Can't create list option!");
+    /// }
+    /// /* ... */
+    /// if cfg.value("group.list").unwrap().is_list().unwrap() {
     ///     // ...
     /// }
     /// ```
@@ -709,11 +912,21 @@ impl OptionReader {
     /// Return option element parent item.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// match cfg.value("root.section").unwrap().parent() {
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create a group section!");
+    /// }
+    /// /* ... */
+    /// let section = group.unwrap().create_section("section");
+    /// if section.is_none() {
+    ///     panic!("Can't create section!");
+    /// }
+    /// /* ... */
+    /// match cfg.value("group.section").unwrap().parent() {
     ///     Some(val) => { /* ... */ },
     ///     None => { /* ... */ }
     /// }
@@ -735,11 +948,20 @@ impl OptionReader {
     /// Return option value type.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::{Config, OptionType};
     /// 
     /// let cfg = Config::new();
-    /// match cfg.value("root.value").unwrap().value_type().unwrap() {
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().write_int32("value", 1345).is_none() {
+    ///     panic!("Can't write int32 value to config!");
+    /// }
+    /// /* ... */
+    /// match cfg.value("group.value").unwrap().value_type().unwrap() {
     ///     OptionType::IntegerType => { /* ... */ },
     ///     OptionType::Int64Type => { /* ... */ },
     ///     OptionType::FloatType => { /* ... */ },
@@ -766,11 +988,20 @@ impl OptionReader {
     /// Read value from path.
     ///
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// match cfg.value("root") {
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().write_string("value", "test string").is_none() {
+    ///     panic!("Can't write string value to config!");
+    /// }
+    /// /* ... */
+    /// match cfg.value("group.value") {
     ///     Some(val) => { /* ... */ },
     ///     None => { /* ... */ }
     /// } 
@@ -797,11 +1028,20 @@ impl OptionReader {
     /// Present option value as i32.
     ///
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// match cfg.value("root.value").unwrap().as_int32() {
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().write_int32("value", 131).is_none() {
+    ///     panic!("Can't write int32 value!");
+    /// }
+    /// /* ... */
+    /// match cfg.value("group.value").unwrap().as_int32() {
     ///     Some(val) => { /* ... */ },
     ///     None => { /* ... */ }
     /// }
@@ -820,11 +1060,20 @@ impl OptionReader {
     /// Present option value as i32, return def if value not found.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let ival = cfg.value("root.value").unwrap().as_int32_default(0);
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().write_int32("value", 143).is_none() {
+    ///     panic!("Can't write int32 value!");
+    /// }
+    /// /* ... */
+    /// let ival = cfg.value("group.value").unwrap().as_int32_default(0);
     /// ```
     pub fn as_int32_default (&self, def : i32) -> i32 {
         match self.as_int32() {
@@ -836,11 +1085,20 @@ impl OptionReader {
     /// Present option value as i64.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// match cfg.value("root.value").unwrap().as_int64() {
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().write_int64("value", 120).is_none() {
+    ///     panic!("Can't write int64 value!");
+    /// }
+    /// /* ... */
+    /// match cfg.value("group.value").unwrap().as_int64() {
     ///     Some(val) => { /* ... */ },
     ///     None => { /* ... */ }
     /// }
@@ -859,11 +1117,20 @@ impl OptionReader {
     /// Present option value as i64, return def if value not exists.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let value = cfg.value("root.value").unwrap().as_int64_default(0);
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().write_int64("value", 145).is_none() {
+    ///     panic!("Can't write int64 value!");
+    /// }
+    /// /* ... */
+    /// let value = cfg.value("group.value").unwrap().as_int64_default(0);
     /// ```
     pub fn as_int64_default(&self, def : i64) -> i64 {
         match self.as_int64() {
@@ -875,11 +1142,20 @@ impl OptionReader {
     /// Present option value as f64.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// match cfg.value("root.value").unwrap().as_float64() {
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().write_float64("value", 1.00021).is_none() {
+    ///     panic!("Can't write float64 value!");
+    /// }
+    /// /* ... */
+    /// match cfg.value("group.value").unwrap().as_float64() {
     ///     Some(val) => { /* ... */ },
     ///     None => { /* ... */ }
     /// }
@@ -898,13 +1174,22 @@ impl OptionReader {
     /// Present option value as f64, return def if value not exists.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let value = cfg.value("root.value").unwrap().as_float64_default(0.0);
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().write_float64("value", 20.201).is_none() {
+    ///     panic!("Can't write float64 value!");
+    /// }
+    /// /* ... */
+    /// let value = cfg.value("group.value").unwrap().as_float64_default(0.0);
     /// ```
-    pub fn as_float_default(&self, def : f64) -> f64 {
+    pub fn as_float64_default(&self, def : f64) -> f64 {
         match self.as_float64() {
             Some(x) => { x },
             None => { def }
@@ -914,11 +1199,20 @@ impl OptionReader {
     /// Present option value as bool.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// match cfg.value("root.value").unwrap().as_bool() {
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().write_bool("value", true).is_none() {
+    ///     panic!("Can't write bool value!");
+    /// }
+    /// /* ... */
+    /// match cfg.value("group.value").unwrap().as_bool() {
     ///     Some(val) => { /* ... */ },
     ///     None => { /* ... */ }
     /// }
@@ -937,11 +1231,20 @@ impl OptionReader {
     /// Present option value as bool, return def if value not exists.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let value = cfg.value("root.value").unwrap().as_bool_default(false);
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().write_bool("value", true).is_none() {
+    ///     panic!("Can't write value!");
+    /// }
+    /// /* ... */
+    /// let value = cfg.value("group.value").unwrap().as_bool_default(false);
     /// ```
     pub fn as_bool_default(&self, def : bool) -> bool {
         match self.as_bool() {
@@ -953,11 +1256,20 @@ impl OptionReader {
     /// Present option value as string.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// match cfg.value("root.value").unwrap().as_string() {
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().write_string("value", "string val").is_none() {
+    ///     panic!("Can't write string value!");
+    /// }
+    /// /* ... */
+    /// match cfg.value("group.value").unwrap().as_string() {
     ///     Some(val) => { /* ... */ },
     ///     None => { /* ... */ }
     /// }
@@ -990,11 +1302,20 @@ impl OptionReader {
     /// Present option value as string, return def if value not exists.
     /// 
     /// # Example
-    /// ```ignore
+    /// ```
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let value = cfg.value("root.value").unwrap()
+    /// let group = cfg.create_section("group");
+    /// if group.is_none() {
+    ///     panic!("Can't create group section!");
+    /// }
+    /// /* ... */
+    /// if group.unwrap().write_string("value", "string val").is_none() {
+    ///     panic!("Can't write seting value!");
+    /// }
+    /// /* ... */
+    /// let value = cfg.value("group.value").unwrap()
     ///     .as_string_default("default");
     /// ```
     pub fn as_string_default<S>(&self, def : S) -> String
