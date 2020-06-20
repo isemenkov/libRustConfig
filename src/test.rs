@@ -133,3 +133,26 @@ fn test_delete_element() {
     assert_eq!(cfg.value("root_section.group").unwrap().delete().is_ok(), true);
     assert_eq!(cfg.value("root_section.group").is_none(), true);
 }
+
+#[test]
+fn test_collection_options() {
+    let cfg = Config::new();
+    let root = cfg.create_section("root").unwrap();
+    let group = root.create_section("group").unwrap();
+
+    let array = group.create_array("array").unwrap();
+    array.write_int32(123);
+    array.write_int32(321);
+    array.write_int32(411);
+
+    let mut counter = 0;
+    for val in cfg.value("root.group.array").unwrap().as_array() {
+        match counter {
+            0 => { assert_eq!(val.as_int32().unwrap(), 123); },
+            1 => { assert_eq!(val.as_int32().unwrap(), 321); },
+            2 => { assert_eq!(val.as_int32().unwrap(), 411) },
+            _ => {}
+        }
+        counter += 1;
+    }
+}

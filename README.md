@@ -54,7 +54,7 @@ if group.unwrap().write_string("value", "string value").is_none() {
     panic!("Can't write string value!");
 }
 
-if cfg.safe_to_file(Path::new("config.cfg")).is_err() {
+if cfg.save_to_file(Path::new("config.cfg")).is_err() {
     panic!("Can't save configuration to file!");
 }
 ```

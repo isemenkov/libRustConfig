@@ -66,6 +66,13 @@ pub struct OptionReader {
     element : Option<*mut raw::config_setting_t>
 }
 
+/// Reader for collection (array, list) option.
+pub struct CollectionReaderIterator {
+    element : Option<*mut raw::config_setting_t>,
+    pos : i32,
+    size : i32
+}
+
 /// Config errors codes.
 #[derive(Debug, PartialEq)]
 pub enum Errors {
@@ -1025,6 +1032,28 @@ impl OptionReader {
         }  
     }
     
+    pub fn as_array(&self) -> CollectionReaderIterator {
+        if self.element.is_none() {
+            return CollectionReaderIterator::new(None);
+        }
+
+        let name = unsafe { CStr::from_ptr(raw::config_setting_name(
+            self.element.unwrap())).to_str().unwrap().to_string() };
+        let val = self.value(name);
+        CollectionReaderIterator::new(Some(val.unwrap().element.unwrap()))
+    }
+
+    pub fn as_list(&self) -> CollectionReaderIterator {
+        if self.element.is_none() {
+            CollectionReaderIterator::new(None);
+        }
+
+        let name = unsafe { CStr::from_ptr(raw::config_setting_name(
+            self.element.unwrap())).to_str().unwrap().to_string() };
+        let val = self.value(name);
+        CollectionReaderIterator::new(Some(val.unwrap().element.unwrap()))
+    }
+
     /// Present option value as i32.
     ///
     /// # Example
@@ -1325,4 +1354,51 @@ impl OptionReader {
             None => { def.into() } 
         }
     }
+
+}
+
+impl CollectionReaderIterator {
+
+    // Constructor.
+    fn new(elem : Option<*mut raw::config_setting_t>) 
+        -> CollectionReaderIterator {
+        
+        let collection_size = {
+            match elem {
+                Some(val) => { 
+                    unsafe { raw::config_setting_length(val) }
+                },
+                None => { 0 }
+            }
+        };
+
+        CollectionReaderIterator {
+            element : elem,
+            pos : 0,
+            size : collection_size
+        }
+    }
+
+}
+
+impl Iterator for CollectionReaderIterator {
+    type Item = OptionReader;
+
+    fn next(&mut self) -> Option<OptionReader> {
+        if (self.element.is_none()) || (self.pos >= self.size) {
+            return None
+        }
+
+        let result = unsafe {
+            raw::config_setting_get_elem(self.element.unwrap(), self.pos as u32)
+        };
+
+        if result.is_null() {
+            return None
+        }
+
+        self.pos += 1;
+        Some(OptionReader::new(Some(result)))
+    }
+
 }
