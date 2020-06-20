@@ -115,3 +115,22 @@ fn test_create_section() {
 
     assert_eq!(fs::remove_file(Path::new("test.cfg")).is_ok(), true);
 }
+
+#[test]
+fn test_delete_element() {
+    let cfg = Config::new();
+    let root = cfg.create_section("root_section").unwrap();
+    let group = root.create_section("group").unwrap();
+    group.write_int32("some_value", 11);
+    group.write_int32("another_value", -123);
+
+    assert_eq!(cfg.value("root_section.group.some_value").unwrap()
+        .as_int32().unwrap(), 11);
+    assert_eq!(cfg.value("root_section.group.another_value").unwrap()
+        .as_int32().unwrap(), -123);
+    
+    assert_eq!(cfg.value("root_section.group.some_value").unwrap()
+        .delete().is_ok(), true);
+    assert_eq!(group.delete().is_ok(), true);
+    assert_eq!(cfg.value("root_section.group").is_none(), true);
+}

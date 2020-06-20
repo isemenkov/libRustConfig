@@ -65,7 +65,9 @@ pub struct OptionReader {
 pub enum Errors {
     ParseError,
     FileNotExists,
-    SaveError
+    SaveError,
+    ElementNotExists,
+    DeleteError
 }
 
 /// Config result type.
@@ -284,6 +286,37 @@ impl OptionWriter {
         }
     }
     
+    /// Delete current config element.
+    pub fn delete(&self) -> Result<()> {
+        if self.element.is_none() {
+            return Err(Errors::ElementNotExists)
+        }
+
+        if OptionReader::new(self.element).is_section().unwrap() {
+            let result = unsafe {
+                raw::config_setting_remove(self.element.unwrap(), 
+                    raw::config_setting_name(&*self.element.unwrap()))
+            };
+
+            match result {
+                raw::CONFIG_TRUE => { Ok(()) },
+                _ => { Err(Errors::DeleteError) }
+            }
+        } else {
+            let result = unsafe {
+                raw::config_setting_remove_elem(
+                    raw::config_setting_parent(&*self.element.unwrap()),
+                    raw::config_setting_index(self.element.unwrap()) as u32)
+            };
+
+            match result {
+                raw::CONFIG_TRUE => { Ok(()) },
+                _ => { Err(Errors::DeleteError) }
+            } 
+        }
+    }
+
+
     /// Create new group section.
     /// 
     /// # Examples
@@ -316,6 +349,70 @@ impl OptionWriter {
         }
     }
     
+    /// Create new array group section.
+    /// 
+    /// # Examples
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// match cfg.create_array("root.array") {
+    ///     Some(s) => { /* ... */ },
+    ///     None => { /* ... */ }
+    /// }
+    /// ```
+    pub fn create_array<S>(&self, path : S) -> Option<OptionWriter> 
+        where S: Into<String> {
+            
+        if self.element.is_none() {
+            return None
+        }
+        
+        let option = unsafe {
+            raw::config_setting_add(self.element.unwrap(), 
+                CString::new(path.into()).unwrap().as_ptr(), 
+                raw::CONFIG_TYPE_ARRAY as i32)
+        };
+        
+        if option.is_null() {
+            None
+        } else {
+            Some(OptionWriter::new(Some(option)))
+        }
+    }
+
+    /// Create new list group section.
+    /// 
+    /// # Examples
+    /// ```ignore
+    /// use libconfig::config::Config;
+    /// 
+    /// let cfg = Config::new();
+    /// match cfg.create_list("root.list") {
+    ///     Some(s) => { /* ... */ },
+    ///     None => { /* ... */ }
+    /// }
+    /// ```
+    pub fn create_list<S>(&self, path : S) -> Option<OptionWriter> 
+        where S: Into<String> {
+            
+        if self.element.is_none() {
+            return None
+        }
+        
+        let option = unsafe {
+            raw::config_setting_add(self.element.unwrap(), 
+                CString::new(path.into()).unwrap().as_ptr(), 
+                raw::CONFIG_TYPE_LIST as i32)
+        };
+        
+        if option.is_null() {
+            None
+        } else {
+            Some(OptionWriter::new(Some(option)))
+        }
+    }
+
     /// Add new integer value to current group.
     /// 
     /// # Example
@@ -509,7 +606,7 @@ impl OptionWriter {
         let option = unsafe {
             raw::config_setting_add(self.element.unwrap(),
                 CString::new(name.into()).unwrap().as_ptr(),
-                raw::CONFIG_TYPE_FLOAT as i32)
+                raw::CONFIG_TYPE_STRING as i32)
         };
         
         if option.is_null() {
@@ -537,7 +634,12 @@ impl OptionReader {
             element : elem
         }
     }
-    
+
+    /// Delete current config element.
+    pub fn delete(&self) -> Result<()> {
+        OptionWriter::new(self.element).delete()
+    }
+
     /// Return true if element is root.
     /// 
     /// # Example
@@ -719,7 +821,10 @@ impl OptionReader {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let ival = cfg.value("root.value").unwrap().as_int32().unwrap();
+    /// match cfg.value("root.value").unwrap().as_int32() {
+    ///     Some(val) => { /* ... */ },
+    ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn as_int32(&self) -> Option<i32> {
         if self.element.is_none() {
@@ -755,7 +860,10 @@ impl OptionReader {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let value = cfg.value("root.value").unwrap().as_int64().unwrap();
+    /// match cfg.value("root.value").unwrap().as_int64() {
+    ///     Some(val) => { /* ... */ },
+    ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn as_int64(&self) -> Option<i64> {
         if self.element.is_none() {
@@ -791,7 +899,10 @@ impl OptionReader {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let value = cfg.value("root.value").unwrap().as_float64().unwrap();
+    /// match cfg.value("root.value").unwrap().as_float64() {
+    ///     Some(val) => { /* ... */ },
+    ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn as_float64(&self) -> Option<f64> {
         if self.element.is_none() {
@@ -827,7 +938,10 @@ impl OptionReader {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let value = cfg.value("root.value").unwrap().as_bool().unwrap();
+    /// match cfg.value("root.value").unwrap().as_bool() {
+    ///     Some(val) => { /* ... */ },
+    ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn as_bool(&self) -> Option<bool> {
         if self.element.is_none() {
@@ -863,18 +977,34 @@ impl OptionReader {
     /// use libconfig::config::Config;
     /// 
     /// let cfg = Config::new();
-    /// let value = cfg.value("root.value").unwrap().as_string().unwrap();
+    /// match cfg.value("root.value").unwrap().as_string() {
+    ///     Some(val) => { /* ... */ },
+    ///     None => { /* ... */ }
+    /// }
     /// ```
     pub fn as_string(&self) -> Option<String> {
         if self.element.is_none() {
             return None
         }
         
-        let result = unsafe {
-            CStr::from_ptr(raw::config_setting_get_string(
-                self.element.unwrap()))
+        let result = {
+            let str = unsafe {
+                raw::config_setting_get_string(self.element.unwrap())
+            };
+
+            if str.is_null() {
+                return None
+            } else { 
+                unsafe { CStr::from_ptr(raw::config_setting_get_string(
+                    self.element.unwrap())) }
+            }
         };
-        Some(result.to_str().unwrap().to_string())
+
+        if result.to_str().is_ok() {
+            Some(result.to_str().unwrap().to_string())
+        } else {
+            None
+        }
     }
     
     /// Present option value as string, return def if value not exists.
