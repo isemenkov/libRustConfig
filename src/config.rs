@@ -93,7 +93,7 @@ impl Config {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// ```
@@ -123,7 +123,7 @@ impl Config {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// use std::path::Path;
     /// 
     /// let mut cfg = Config::new();
@@ -157,7 +157,7 @@ impl Config {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let mut cfg = Config::new();
     /// if cfg.load_from_string("root { value = 1 }").is_ok() {
@@ -192,7 +192,7 @@ impl Config {
    /// 
    /// # Example
    /// ```
-   /// use libconfig::config::Config;
+   /// use librustconfig::config::Config;
    /// use std::path::Path;
    /// use std::fs;
    /// 
@@ -219,7 +219,7 @@ impl Config {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// use std::path::Path;
     /// 
     /// let mut cfg = Config::new();
@@ -237,7 +237,7 @@ impl Config {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// match cfg.value("root.value") {
@@ -254,7 +254,7 @@ impl Config {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// match cfg.create_section("root") {
@@ -291,7 +291,7 @@ impl OptionWriter {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// match cfg.create_section("group") {
@@ -355,7 +355,7 @@ impl OptionWriter {
     /// 
     /// # Examples
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// match cfg.create_section("root.group") {
@@ -387,7 +387,7 @@ impl OptionWriter {
     /// 
     /// # Examples
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group").unwrap();
@@ -420,7 +420,7 @@ impl OptionWriter {
     /// 
     /// # Examples
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group").unwrap();
@@ -453,7 +453,7 @@ impl OptionWriter {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// match cfg.create_section("section") {
@@ -495,7 +495,7 @@ impl OptionWriter {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// match cfg.create_section("section") {
@@ -537,7 +537,7 @@ impl OptionWriter {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// match cfg.create_section("section") {
@@ -579,7 +579,7 @@ impl OptionWriter {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// match cfg.create_section("section") {
@@ -627,7 +627,7 @@ impl OptionWriter {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// match cfg.create_section("section") {
@@ -680,7 +680,7 @@ impl CollectionWriter {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group").unwrap();
@@ -706,7 +706,7 @@ impl CollectionWriter {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group").unwrap();
@@ -731,7 +731,7 @@ impl CollectionWriter {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group").unwrap();
@@ -756,7 +756,7 @@ impl CollectionWriter {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group").unwrap();
@@ -781,7 +781,7 @@ impl CollectionWriter {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group").unwrap();
@@ -818,7 +818,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// match cfg.create_section("group") {
@@ -838,7 +838,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// if cfg.create_section("root").is_none() {
@@ -862,7 +862,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let root = cfg.create_section("root");
@@ -891,7 +891,7 @@ impl OptionReader {
     ///
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -920,7 +920,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -956,7 +956,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::{Config, OptionType};
+    /// use librustconfig::config::{Config, OptionType};
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -996,7 +996,7 @@ impl OptionReader {
     ///
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -1044,7 +1044,7 @@ impl OptionReader {
     ///
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -1076,7 +1076,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -1101,7 +1101,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -1133,7 +1133,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -1158,7 +1158,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -1190,7 +1190,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -1215,7 +1215,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -1247,7 +1247,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -1272,7 +1272,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");
@@ -1318,7 +1318,7 @@ impl OptionReader {
     /// 
     /// # Example
     /// ```
-    /// use libconfig::config::Config;
+    /// use librustconfig::config::Config;
     /// 
     /// let cfg = Config::new();
     /// let group = cfg.create_section("group");

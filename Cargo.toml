@@ -1,5 +1,5 @@
 [package]
-name = "libconfig"
+name = "librustconfig"
 version = "0.1.0"
 authors = ["Ivan Semenkov <ivan@semenkov.pro>"]
 edition = "2018"
@@ -7,7 +7,7 @@ license = "MIT"
 description = "libRustConfig is rust wrapper around libconfig library. Library for processing configuration files."
 repository = "https://github.com/isemenkov/librustconfig"
 readme = "README.md"
-categories = ["ffi", "libconfig", "wrapper", "bindings"]
+categories = ["api-bindings", "config", "external-ffi-bindings", "libconfig"]
 
 [dependencies]
 libconfig-sys = { path = "./libconfig-sys", version = "0.1" }
