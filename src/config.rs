@@ -1033,25 +1033,11 @@ impl OptionReader {
     }
     
     pub fn as_array(&self) -> CollectionReaderIterator {
-        if self.element.is_none() {
-            return CollectionReaderIterator::new(None);
-        }
-
-        let name = unsafe { CStr::from_ptr(raw::config_setting_name(
-            self.element.unwrap())).to_str().unwrap().to_string() };
-        let val = self.value(name);
-        CollectionReaderIterator::new(Some(val.unwrap().element.unwrap()))
+        CollectionReaderIterator::new(self.element)
     }
 
     pub fn as_list(&self) -> CollectionReaderIterator {
-        if self.element.is_none() {
-            CollectionReaderIterator::new(None);
-        }
-
-        let name = unsafe { CStr::from_ptr(raw::config_setting_name(
-            self.element.unwrap())).to_str().unwrap().to_string() };
-        let val = self.value(name);
-        CollectionReaderIterator::new(Some(val.unwrap().element.unwrap()))
+        CollectionReaderIterator::new(self.element)
     }
 
     /// Present option value as i32.

@@ -54,6 +54,22 @@ if group.unwrap().write_string("value", "string value").is_none() {
     panic!("Can't write string value!");
 }
 
+let array = group.create_array("array_list");
+if array.is_none() {
+    panic!("Can't create new array option group!");
+}
+
+if array.write_int32(12).is_none() {
+    panic!("Can't write array element value!");
+}
+
+for arr_val in cfg.value("group.array_list").unwrap().as_array() {
+    if arr_val.as_int32().in_none() {
+        panic!("Can't read array item value!");
+    }
+    /* ... do something with array item ... */
+}
+
 if cfg.save_to_file(Path::new("config.cfg")).is_err() {
     panic!("Can't save configuration to file!");
 }

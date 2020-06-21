@@ -145,12 +145,28 @@ fn test_collection_options() {
     array.write_int32(321);
     array.write_int32(411);
 
+    let list = group.create_list("list").unwrap();
+    list.write_string("value1");
+    list.write_string("value2");
+    list.write_string("value3");
+
     let mut counter = 0;
     for val in cfg.value("root.group.array").unwrap().as_array() {
         match counter {
             0 => { assert_eq!(val.as_int32().unwrap(), 123); },
             1 => { assert_eq!(val.as_int32().unwrap(), 321); },
             2 => { assert_eq!(val.as_int32().unwrap(), 411) },
+            _ => {}
+        }
+        counter += 1;
+    }
+
+    counter = 0;
+    for val in cfg.value("root.group.list").unwrap().as_list() {
+        match counter {
+            0 => { assert_eq!(val.as_string().unwrap(), "value1"); },
+            1 => { assert_eq!(val.as_string().unwrap(), "value2"); },
+            2 => { assert_eq!(val.as_string().unwrap(), "value3"); },
             _ => {}
         }
         counter += 1;
