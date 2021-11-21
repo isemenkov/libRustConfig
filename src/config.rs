@@ -266,6 +266,20 @@ impl Config {
         where S: Into<String> {
         OptionWriter::new(self.root_element).create_section(path)
     }
+
+    /// Get the root section writer
+    ///
+    /// # Example
+    /// ```
+    /// use librustconfig::config::Config;
+    ///
+    /// let cfg = Config::new();
+    /// let root_writer = cfg.root();
+    /// root_writer.write_string("interface", "eno1");
+    /// ```
+    pub fn root(&self) -> OptionWriter {
+        return OptionWriter::new(self.root_element);
+    }
 }
 
 /// Destructor.
