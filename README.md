@@ -5,7 +5,7 @@ It is rust bindings and wrapper around [libconfig](https://github.com/hyperrealm
 
 ### Table of contents
 
-* [Requierements](#requirements)
+* [Requirements](#requirements)
 * [Installation](#installation)
 * [Usage](#usage)
 * [Bindings](#bindings)
